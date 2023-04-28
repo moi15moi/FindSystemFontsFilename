@@ -1,5 +1,5 @@
 # FindSystemFontsFilename
-This tool allows you to get the font filename on your system.
+This tool allows you to get the font filename on your system. It will collect TrueType (.ttf), OpenType (.otf) and TrueType Collection (.ttf) font format.
 
 It uses some APIs to find the font filename:
 - Windows: [DirectWrite API](https://learn.microsoft.com/en-us/windows/win32/directwrite/direct-write-portal)
