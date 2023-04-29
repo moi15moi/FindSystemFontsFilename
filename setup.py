@@ -36,7 +36,6 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[
         "comtypes; platform_system=='Windows'",
-        "pyobjc-framework-CoreText; platform_system=='Darwin'",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
