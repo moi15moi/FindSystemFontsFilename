@@ -1,6 +1,7 @@
 from ctypes import byref, c_char_p, c_int, c_void_p, cdll, POINTER, Structure, util
 from enum import Enum, IntEnum
 from typing import Set
+from .exceptions import FontConfigNotFound
 from .system_fonts import SystemFonts
 
 
@@ -87,7 +88,7 @@ class LinuxFonts(SystemFonts):
         font_config_library_name = util.find_library("fontconfig")
 
         if font_config_library_name is None:
-            raise Exception("You need to install FontConfig to get the fonts filename")
+            raise FontConfigNotFound("You need to install FontConfig to get the fonts filename")
 
         LinuxFonts._font_config = cdll.LoadLibrary(font_config_library_name)
 

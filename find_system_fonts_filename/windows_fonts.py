@@ -3,6 +3,7 @@ from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
 from enum import IntEnum
 from sys import getwindowsversion
 from typing import Set
+from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
 
 
@@ -244,7 +245,7 @@ class WindowsFonts(SystemFonts):
         elif WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
             fonts_filename = WindowsFonts._get_fonts_filename_windows_vista_sp2_or_more()
         else:
-            raise Exception("FindSystemFontsFilename only works on Windows Vista SP2 or more")
+            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
 
         return fonts_filename
 

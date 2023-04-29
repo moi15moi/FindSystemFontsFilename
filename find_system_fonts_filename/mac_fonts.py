@@ -2,6 +2,7 @@ from CoreText import CTFontManagerCopyAvailableFontURLs
 from pathlib import Path
 from platform import mac_ver
 from typing import Set
+from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
 
 
@@ -20,7 +21,7 @@ class MacFonts(SystemFonts):
                 if Path(url.path()).suffix.lower() in MacFonts.VALID_FONT_FORMATS:
                     fonts_filename.add(str(url.path()))
         else:
-            raise Exception("FindSystemFontsFilename only works on Mac 10.6 or more")
+            raise OSNotSupported("FindSystemFontsFilename only works on Mac 10.6 or more")
 
         return fonts_filename
 

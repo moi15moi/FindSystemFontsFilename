@@ -1,4 +1,5 @@
 from platform import system
+from .exceptions import OSNotSupported
 
 
 def get_system_fonts_filename():
@@ -17,4 +18,4 @@ def get_system_fonts_filename():
         return MacFonts.get_system_fonts_filename()
 
     else:
-        raise Exception("FindSystemFontsFilename only works on Windows, Mac and Linux.")
+        raise OSNotSupported("FindSystemFontsFilename only works on Windows, Mac and Linux.")
