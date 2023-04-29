@@ -6,11 +6,6 @@ from typing import Set
 from .system_fonts import SystemFonts
 
 
-DWriteCreateFactory = windll.dwrite.DWriteCreateFactory
-DWriteCreateFactory.restype = HRESULT
-DWriteCreateFactory.argtypes = [wintypes.UINT, GUID, POINTER(POINTER(IUnknown))]
-
-
 class DWRITE_FACTORY_TYPE(IntEnum):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_factory_type
     DWRITE_FACTORY_TYPE_SHARED = 0
@@ -233,6 +228,7 @@ class IDWriteFactory3(IDWriteFactory2):
 
 
 class WindowsFonts(SystemFonts):
+    _DWriteCreateFactory = None
     VALID_FONT_FORMATS = [
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_CFF,
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE,
@@ -257,14 +253,13 @@ class WindowsFonts(SystemFonts):
         """
         Return an set of all the installed fonts filename.
         """
+        if WindowsFonts._DWriteCreateFactory is None:
+            WindowsFonts._load_DWriteCreateFactory()
+
         fonts_filename = set()
 
         dwrite_factory = POINTER(IDWriteFactory3)()
-        DWriteCreateFactory(
-            DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED,
-            IDWriteFactory3._iid_,
-            byref(dwrite_factory),
-        )
+        WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory3._iid_, byref(dwrite_factory))
 
         font_set = POINTER(IDWriteFontSet)()
         dwrite_factory.GetSystemFontSet(byref(font_set))
@@ -312,10 +307,13 @@ class WindowsFonts(SystemFonts):
         """
         Return an set of all the installed fonts filename.
         """
+        if WindowsFonts._DWriteCreateFactory is None:
+            WindowsFonts._load_DWriteCreateFactory()
+
         fonts_filename = set()
 
         dwrite_factory = POINTER(IDWriteFactory)()
-        DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory._iid_, byref(dwrite_factory))
+        WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory._iid_, byref(dwrite_factory))
 
         sys_collection = POINTER(IDWriteFontCollection)()
         dwrite_factory.GetSystemFontCollection(byref(sys_collection), False)
@@ -368,6 +366,13 @@ class WindowsFonts(SystemFonts):
                     fonts_filename.add(buffer.value)
 
         return fonts_filename
+    
+
+    @staticmethod
+    def _load_DWriteCreateFactory():
+        WindowsFonts._DWriteCreateFactory = windll.dwrite.DWriteCreateFactory
+        WindowsFonts._DWriteCreateFactory.restype = HRESULT
+        WindowsFonts._DWriteCreateFactory.argtypes = [wintypes.UINT, GUID, POINTER(POINTER(IUnknown))]
 
 
 class WindowsVersionHelpers:
