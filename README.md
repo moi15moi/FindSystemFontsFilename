@@ -13,7 +13,15 @@ pip install FindSystemFontsFilename
 
 ## How to use it
 ```python
-from find_system_fonts_filename import get_system_fonts_filename
+from find_system_fonts_filename import get_system_fonts_filename, FontConfigNotFound, OSNotSupported
 
-fonts_filename = get_system_fonts_filename()
+try:
+    fonts_filename = get_system_fonts_filename()
+except (FontConfigNotFound, OSNotSupported):
+    # Deal with the exception
+    # OSNotSupported can only happen in Windows and macOS
+    #   - Windows Vista SP2 and more are supported
+    #   - macOS 10.6 and more are supported
+    # FontConfigNotFound can only happen on Linux when Fontconfig could't be found.
+    pass
 ```
