@@ -13,7 +13,7 @@ class MacFonts(SystemFonts):
     # CoreText has an API to get the format of the font: https://developer.apple.com/documentation/coretext/ctfontformat
     # But, the API is "semi-broken" since it says .dfont are TrueType. This is kinda true, but it is not a behaviour that we want.
     # So, we only check the file extension and see if it is valid.
-    VALID_FONT_FORMATS = ["ttf", "ttc", "otf"]
+    VALID_FONT_FORMATS = ["ttf", "otf", "ttc"]
 
     def get_system_fonts_filename() -> Set[str]:
         if MacVersionHelpers.is_mac_version_or_greater(10, 6):
@@ -36,7 +36,7 @@ class MacFonts(SystemFonts):
                 if no_error:
                     filename = file_name_ptr.value.decode()
 
-                    if Path(filename).suffix.lstrip(".").strip() in MacFonts.VALID_FONT_FORMATS:
+                    if Path(filename).suffix.lstrip(".").strip().lower() in MacFonts.VALID_FONT_FORMATS:
                         fonts_filename.add(filename)
                 else:
                     raise Exception("An unexpected error has occurred while decoded the CFURL.")
