@@ -97,4 +97,4 @@ class MacVersionHelpers:
         system_major = int(system_major)
         system_minor = int(system_minor)
 
-        return minimum_major > system_major or (system_major == minimum_major and system_minor >= minimum_minor)
+        return system_major > minimum_major or (system_major == minimum_major and system_minor >= minimum_minor)
