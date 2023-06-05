@@ -92,17 +92,22 @@ class LinuxFonts(SystemFonts):
 
         LinuxFonts._font_config = cdll.LoadLibrary(font_config_library_name)
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcinitloadconfigandfonts.html
         LinuxFonts._font_config.FcInitLoadConfigAndFonts.restype = c_void_p
         LinuxFonts._font_config.FcInitLoadConfigAndFonts.argtypes = []
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcpatterncreate.html
         LinuxFonts._font_config.FcPatternCreate.restype = c_void_p
         LinuxFonts._font_config.FcPatternCreate.argtypes = []
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcobjectsetbuild.html
         LinuxFonts._font_config.FcObjectSetBuild.restype = c_void_p
         LinuxFonts._font_config.FcObjectSetBuild.argtypes = [c_char_p, c_void_p]
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcfontlist.html
         LinuxFonts._font_config.FcFontList.restype = POINTER(FcFontSet)
         LinuxFonts._font_config.FcFontList.argtypes = [c_void_p, c_void_p, c_void_p]
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcpatternget-type.html
         LinuxFonts._font_config.FcPatternGetString.restype = FC_RESULT
         LinuxFonts._font_config.FcPatternGetString.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_char_p)]
