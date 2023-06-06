@@ -23,7 +23,7 @@ class DWRITE_FONT_FILE_TYPE(IntEnum):
     DWRITE_FONT_FILE_TYPE_TYPE1_PFB = 5
     DWRITE_FONT_FILE_TYPE_VECTOR = 6
     DWRITE_FONT_FILE_TYPE_BITMAP = 7
-    DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION = 8
+    DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION = DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION
 
 
 class IDWriteFontFileLoader(IUnknown):
@@ -367,7 +367,6 @@ class WindowsFonts(SystemFonts):
                     fonts_filename.add(buffer.value)
 
         return fonts_filename
-    
 
     @staticmethod
     def _load_DWriteCreateFactory():

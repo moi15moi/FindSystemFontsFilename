@@ -65,18 +65,23 @@ class MacFonts(SystemFonts):
 
         CFIndex = c_long
 
+        # https://developer.apple.com/documentation/corefoundation/1521153-cfrelease
         MacFonts._core_foundation.CFRelease.restype = c_void_p
         MacFonts._core_foundation.CFRelease.argtypes = [c_void_p]
 
+        # https://developer.apple.com/documentation/corefoundation/1388772-cfarraygetcount?language=objc
         MacFonts._core_foundation.CFArrayGetCount.restype = CFIndex
         MacFonts._core_foundation.CFArrayGetCount.argtypes = [c_void_p]
 
+        # https://developer.apple.com/documentation/corefoundation/1388767-cfarraygetvalueatindex?language=objc
         MacFonts._core_foundation.CFArrayGetValueAtIndex.restype = c_void_p
         MacFonts._core_foundation.CFArrayGetValueAtIndex.argtypes = [c_void_p, CFIndex]
 
+        # https://developer.apple.com/documentation/corefoundation/1541515-cfurlgetfilesystemrepresentation?language=objc
         MacFonts._core_foundation.CFURLGetFileSystemRepresentation.restype = c_bool
         MacFonts._core_foundation.CFURLGetFileSystemRepresentation.argtypes = [c_void_p, c_bool, c_char_p, CFIndex]
 
+        # https://developer.apple.com/documentation/coretext/1499478-ctfontmanagercopyavailablefontur?language=objc
         MacFonts._core_text.CTFontManagerCopyAvailableFontURLs.restype = c_void_p
         MacFonts._core_text.CTFontManagerCopyAvailableFontURLs.argtypes = []
 
@@ -97,4 +102,4 @@ class MacVersionHelpers:
         system_major = int(system_major)
         system_minor = int(system_minor)
 
-        return minimum_major > system_major or (system_major == minimum_major and system_minor >= minimum_minor)
+        return system_major > minimum_major or (system_major == minimum_major and system_minor >= minimum_minor)
