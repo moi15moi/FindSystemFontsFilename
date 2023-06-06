@@ -367,7 +367,6 @@ class WindowsFonts(SystemFonts):
                     fonts_filename.add(buffer.value)
 
         return fonts_filename
-    
 
     @staticmethod
     def _load_DWriteCreateFactory():

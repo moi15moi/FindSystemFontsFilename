@@ -82,7 +82,6 @@ class LinuxFonts(SystemFonts):
 
         return fonts_filename
 
-
     @staticmethod
     def _load_font_config_library():
         font_config_library_name = util.find_library("fontconfig")
