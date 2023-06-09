@@ -13,7 +13,7 @@ def get_system_fonts_filename() -> Set[str]:
 
     elif system_name == "Linux":
         # ANDROID_ROOT or ANDROID_BOOTLOGO - https://stackoverflow.com/a/66174754/15835974
-        if any(t in environ.values() for t in ("ANDROID_ROOT", "ANDROID_BOOTLOGO")):
+        if any(t in environ.keys() for t in ("ANDROID_ROOT", "ANDROID_BOOTLOGO")):
             from .android_fonts import AndroidFonts
             return AndroidFonts.get_system_fonts_filename()
         else:
