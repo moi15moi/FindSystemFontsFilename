@@ -37,6 +37,14 @@ class FcFontSet(Structure):
     ]
 
 
+def string_to_cstring(string: str) -> c_char_p:
+    return c_char_p(bytes(ord(c) for c in string))
+
+
+FC_FONTFORMAT = string_to_cstring("fontformat")
+FC_FILE = string_to_cstring("file")
+
+
 class LinuxFonts(SystemFonts):
     _font_config = None
     VALID_FONT_FORMATS = [
@@ -57,7 +65,7 @@ class LinuxFonts(SystemFonts):
 
         config = LinuxFonts._font_config.FcInitLoadConfigAndFonts()
         pat = LinuxFonts._font_config.FcPatternCreate()
-        os = LinuxFonts._font_config.FcObjectSetBuild(b"file", b"fontformat", 0)
+        os = LinuxFonts._font_config.FcObjectSetBuild(FC_FILE, FC_FONTFORMAT, 0)
         fs = LinuxFonts._font_config.FcFontList(config, pat, os)
 
         for i in range(fs.contents.nfont):
@@ -66,8 +74,8 @@ class LinuxFonts(SystemFonts):
             font_format_ptr = c_char_p()
 
             if (
-                LinuxFonts._font_config.FcPatternGetString(font, b"fontformat", 0, byref(font_format_ptr)) == FC_RESULT.FC_RESULT_MATCH
-                and LinuxFonts._font_config.FcPatternGetString(font, b"file", 0, byref(file_path_ptr)) == FC_RESULT.FC_RESULT_MATCH
+                LinuxFonts._font_config.FcPatternGetString(font, FC_FONTFORMAT, 0, byref(font_format_ptr)) == FC_RESULT.FC_RESULT_MATCH
+                and LinuxFonts._font_config.FcPatternGetString(font, FC_FILE, 0, byref(file_path_ptr)) == FC_RESULT.FC_RESULT_MATCH
             ):
                 font_format = FC_FONT_FORMAT(font_format_ptr.value)
 
