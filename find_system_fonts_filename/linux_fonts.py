@@ -110,3 +110,19 @@ class LinuxFonts(SystemFonts):
         # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcpatternget-type.html
         LinuxFonts._font_config.FcPatternGetString.restype = FC_RESULT
         LinuxFonts._font_config.FcPatternGetString.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_char_p)]
+
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcconfigdestroy.html
+        LinuxFonts._font_config.FcConfigDestroy.restype = None
+        LinuxFonts._font_config.FcConfigDestroy.argtypes = [c_void_p]
+
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcpatterndestroy.html
+        LinuxFonts._font_config.FcPatternDestroy.restype = None
+        LinuxFonts._font_config.FcPatternDestroy.argtypes = [c_void_p]
+
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcobjectsetdestroy.html
+        LinuxFonts._font_config.FcObjectSetDestroy.restype = None
+        LinuxFonts._font_config.FcObjectSetDestroy.argtypes = [c_void_p]
+
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcfontsetdestroy.html
+        LinuxFonts._font_config.FcFontSetDestroy.restype = None
+        LinuxFonts._font_config.FcFontSetDestroy.argtypes = [c_void_p]
