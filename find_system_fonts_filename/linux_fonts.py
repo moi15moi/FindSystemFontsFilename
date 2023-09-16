@@ -58,7 +58,7 @@ class LinuxFonts(SystemFonts):
         config = LinuxFonts._font_config.FcInitLoadConfigAndFonts()
         pat = LinuxFonts._font_config.FcPatternCreate()
         os = LinuxFonts._font_config.FcObjectSetBuild(b"file", b"fontformat", 0)
-        fs = LinuxFonts._font_config.FcFontList(config, pat, None)
+        fs = LinuxFonts._font_config.FcFontList(config, pat, os)
 
         for i in range(fs.contents.nfont):
             font = fs.contents.fonts[i]
