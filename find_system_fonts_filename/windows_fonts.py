@@ -26,6 +26,13 @@ class DWRITE_FONT_FILE_TYPE(IntEnum):
     DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION = DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION
 
 
+class DWRITE_LOCALITY(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_locality
+    DWRITE_LOCALITY_REMOTE = 0
+    DWRITE_LOCALITY_PARTIAL = 1
+    DWRITE_LOCALITY_LOCAL = 2
+
+
 class IDWriteFontFileLoader(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontfileloader
     _iid_ = GUID("{727cad4e-d6af-4c9e-8a08-d695b11caa49}")
@@ -67,7 +74,7 @@ class IDWriteFontFaceReference(IUnknown):
         STDMETHOD(None, "GetLocalFileSize"),  # Need to be implemented
         STDMETHOD(None, "GetFileSize"),  # Need to be implemented
         STDMETHOD(None, "GetFileTime"),  # Need to be implemented
-        STDMETHOD(None, "GetLocality"),  # Need to be implemented
+        STDMETHOD(wintypes.UINT, "GetLocality"),
         STDMETHOD(None, "EnqueueFontDownloadRequest"),  # Need to be implemented
         STDMETHOD(None, "EnqueueCharacterDownloadRequest"),  # Need to be implemented
         STDMETHOD(None, "EnqueueGlyphDownloadRequest"),  # Need to be implemented
@@ -269,6 +276,10 @@ class WindowsFonts(SystemFonts):
             font_face_reference = POINTER(IDWriteFontFaceReference)()
             font_set.GetFontFaceReference(i, byref(font_face_reference))
 
+            locality = font_face_reference.GetLocality()
+            if DWRITE_LOCALITY(locality) != DWRITE_LOCALITY.DWRITE_LOCALITY_LOCAL:
+                continue
+
             font_file = POINTER(IDWriteFontFile)()
             font_face_reference.GetFontFile(byref(font_file))
 
@@ -279,10 +290,7 @@ class WindowsFonts(SystemFonts):
             font_file_reference_key_size = wintypes.UINT()
             font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
 
-            try:
-                local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-            except COMError:
-                continue
+            local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
 
             is_supported_font_type = wintypes.BOOLEAN()
             font_file_type = wintypes.UINT()
@@ -344,10 +352,7 @@ class WindowsFonts(SystemFonts):
                     loader = POINTER(IDWriteFontFileLoader)()
                     font_file.GetLoader(byref(loader))
 
-                    try:
-                        local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-                    except COMError:
-                        continue
+                    local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
 
                     is_supported_font_type = wintypes.BOOLEAN()
                     font_file_type = wintypes.UINT()
