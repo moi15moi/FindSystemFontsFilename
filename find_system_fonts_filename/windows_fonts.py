@@ -1,11 +1,14 @@
 from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
-from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
+from comtypes.automation import VARIANT
+from ctypes import byref, create_unicode_buffer, POINTER, Structure, Union, windll, wintypes
 from enum import IntEnum
+from pathlib import Path
 from sys import getwindowsversion
 from typing import Set
 from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
 
+# DIRECTWRITE definition
 
 class DWRITE_FACTORY_TYPE(IntEnum):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_factory_type
@@ -235,14 +238,155 @@ class IDWriteFactory3(IDWriteFactory2):
     ]
 
 
+# Shell definition
+
+class SHCONTF(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/ne-shobjidl_core-_shcontf
+    SHCONTF_CHECKING_FOR_CHILDREN = 0x10
+    SHCONTF_FOLDERS = 0x20
+    SHCONTF_NONFOLDERS = 0x40
+    SHCONTF_INCLUDEHIDDEN = 0x80
+    SHCONTF_INIT_ON_FIRST_NEXT = 0x100
+    SHCONTF_NETPRINTERSRCH = 0x200
+    SHCONTF_SHAREABLE = 0x400
+    SHCONTF_STORAGE = 0x800
+    SHCONTF_NAVIGATION_ENUM = 0x1000
+    SHCONTF_FASTITEMS = 0x2000
+    SHCONTF_FLATLIST = 0x4000
+    SHCONTF_ENABLE_ASYNC = 0x8000
+    SHCONTF_INCLUDESUPERHIDDEN = 0x10000
+
+
+class SHITEMID(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shtypes/ns-shtypes-shitemid
+    _fields_ = [
+        ("cb", wintypes.USHORT),
+        ("abID", wintypes.BYTE),
+    ]
+
+
+class ITEMIDLIST(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shtypes/ns-shtypes-itemidlist
+    _fields_ = [
+        ("mkid", SHITEMID),
+    ]
+
+
+class STRRET(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shtypes/ns-shtypes-strret
+    class DUMMYUNIONNAME(Union):
+        _fields_ = [
+            ("pOleStr", wintypes.LPWSTR),
+            ("uOffset", wintypes.UINT),
+            ("cStr", wintypes.CHAR * 260),
+        ]
+
+    _fields_ = [
+        ("uType", wintypes.UINT),
+        ('DUMMYUNIONNAME', DUMMYUNIONNAME),
+    ]
+
+
+class PROPERTYKEY(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/wtypes/ns-wtypes-propertykey
+    _fields_ = [
+        ("fmtid", GUID),
+        ("pid", wintypes.DWORD),
+    ]
+
+
+class SHELLDETAILS(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shtypes/ns-shtypes-shelldetails
+    _fields_ = [
+        ("fmt", wintypes.INT),
+        ("cxChar", wintypes.INT),
+        ("str", STRRET),
+    ]
+
+
+# This PROPERTYKEY have obtained with IShellFolder2::MapColumnToSCID with the column 13
+PK_FONTS_FILENAMES = PROPERTYKEY()
+PK_FONTS_FILENAMES.fmtid = GUID("{4530d076-b598-4a81-8813-9b11286ef6ea}")
+PK_FONTS_FILENAMES.pid = 7
+
+FOLDERID_FONTS = GUID("{FD228CB7-AE11-4AE3-864C-16F3910AB8FE}")
+
+
+class IBindCtx(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/objidl/nn-objidl-ibindctx
+    _iid_ = GUID("{0000000e-0000-0000-C000-000000000046}")
+
+    _methods_ = [
+        STDMETHOD(None, "RegisterObjectBound"),  # Need to be implemented
+        STDMETHOD(None, "RevokeObjectBound"),  # Need to be implemented
+        STDMETHOD(None, "ReleaseBoundObjects"),  # Need to be implemented
+        STDMETHOD(None, "SetBindOptions"),  # Need to be implemented
+        STDMETHOD(None, "GetBindOptions"),  # Need to be implemented
+        STDMETHOD(None, "GetRunningObjectTable"),  # Need to be implemented
+        STDMETHOD(None, "RegisterObjectParam"),  # Need to be implemented
+        STDMETHOD(None, "GetObjectParam"),  # Need to be implemented
+        STDMETHOD(None, "EnumObjectParam"),  # Need to be implemented
+        STDMETHOD(None, "RevokeObjectParam"),  # Need to be implemented
+    ]
+
+
+class IEnumIDList(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ienumidlist
+    _iid_ = GUID("{000214F2-0000-0000-C000-000000000046}")
+
+    _methods_ = [
+        STDMETHOD(HRESULT, "Next", [wintypes.ULONG, POINTER(POINTER(ITEMIDLIST)), POINTER(wintypes.ULONG)]),
+        STDMETHOD(None, "Skip"),  # Need to be implemented
+        STDMETHOD(None, "Reset"),  # Need to be implemented
+        STDMETHOD(None, "Clone"),  # Need to be implemented
+    ]
+
+
+class IShellFolder(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ishellfolder
+    _iid_ = GUID("{000214E6-0000-0000-C000-000000000046}")
+
+    _methods_ = [
+        STDMETHOD(None, "ParseDisplayName"),  # Need to be implemented
+        STDMETHOD(HRESULT, "EnumObjects", [wintypes.HWND, wintypes.DWORD, POINTER(POINTER(IEnumIDList))]),
+        STDMETHOD(HRESULT, "BindToObject", [POINTER(ITEMIDLIST), POINTER(IBindCtx), POINTER(GUID), POINTER(wintypes.LPCVOID)]),
+        STDMETHOD(None, "BindToStorage"),  # Need to be implemented
+        STDMETHOD(None, "CompareIDs"),  # Need to be implemented
+        STDMETHOD(None, "CreateViewObject"),  # Need to be implemented
+        STDMETHOD(None, "GetAttributesOf"),  # Need to be implemented
+        STDMETHOD(None, "GetUIObjectOf"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetDisplayNameOf", [POINTER(ITEMIDLIST), wintypes.DWORD, POINTER(STRRET)]),
+        STDMETHOD(None, "SetNameOf"),  # Need to be implemented
+    ]
+
+
+class IShellFolder2(IShellFolder):
+    # https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ishellfolder2
+    _iid_ = GUID("{93F2F68C-1D1B-11d3-A30E-00C04F79ABD1}")
+
+    _methods_ = [
+        STDMETHOD(None, "GetDefaultSearchGUID"),  # Need to be implemented
+        STDMETHOD(None, "EnumSearches"),  # Need to be implemented
+        STDMETHOD(None, "GetDefaultColumn"),  # Need to be implemented
+        STDMETHOD(None, "GetDefaultColumnState"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetDetailsEx", [POINTER(ITEMIDLIST), POINTER(PROPERTYKEY), POINTER(VARIANT)]),
+        STDMETHOD(HRESULT, "GetDetailsOf", [POINTER(ITEMIDLIST), wintypes.UINT, POINTER(SHELLDETAILS)]),
+        STDMETHOD(None, "MapColumnToSCID"),  # Need to be implemented
+    ]
+
+
 class WindowsFonts(SystemFonts):
     _DWriteCreateFactory = None
-    VALID_FONT_FORMATS = [
+    _Shell32 = None
+    _CoTaskMemFree = None
+    _VariantClear = None
+    VALID_FONT_FORMATS_DWRITE = [
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_CFF,
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE,
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION,
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION,
     ]
+    VALID_FONT_FORMATS_EXTENSION = ["ttf", "otf", "ttc", "otc"]
 
     def get_system_fonts_filename() -> Set[str]:
         windows_version = getwindowsversion()
@@ -251,8 +395,10 @@ class WindowsFonts(SystemFonts):
             fonts_filename = WindowsFonts._get_fonts_filename_windows_10_or_more()
         elif WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
             fonts_filename = WindowsFonts._get_fonts_filename_windows_vista_sp2_or_more()
+        elif WindowsVersionHelpers.is_windows_vista_or_greater(windows_version):
+            fonts_filename = WindowsFonts._get_fonts_filename_windows_vista_or_more()
         else:
-            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
+            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista or more")
 
         return fonts_filename
 
@@ -298,7 +444,7 @@ class WindowsFonts(SystemFonts):
             number_of_faces = wintypes.UINT()
             font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
 
-            if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
+            if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS_DWRITE:
                 continue
 
             path_len = wintypes.UINT()
@@ -360,7 +506,7 @@ class WindowsFonts(SystemFonts):
                     number_of_faces = wintypes.UINT()
                     font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
 
-                    if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
+                    if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS_DWRITE:
                         continue
 
                     path_len = wintypes.UINT()
@@ -372,6 +518,102 @@ class WindowsFonts(SystemFonts):
                     fonts_filename.add(buffer.value)
 
         return fonts_filename
+
+
+    @staticmethod
+    def _get_fonts_filename_windows_vista_or_more() -> Set[str]:
+        """
+        Return an set of all the installed fonts filename.
+        """
+        if WindowsFonts._Shell32 is None:
+            WindowsFonts._load_Shell32_CoTaskMemFree_VariantClear()
+
+        fonts_filename = set()
+
+        pidl_fonts = POINTER(ITEMIDLIST)()
+        WindowsFonts._Shell32.SHGetKnownFolderIDList(FOLDERID_FONTS, 0, None, byref(pidl_fonts))
+
+        font_shell_folder = POINTER(IShellFolder2)()
+        WindowsFonts._Shell32.SHBindToObject(None, pidl_fonts, None, IShellFolder2._iid_, byref(font_shell_folder))
+
+        enum_id_list = POINTER(IEnumIDList)()
+        font_shell_folder.EnumObjects(None, SHCONTF.SHCONTF_FOLDERS | SHCONTF.SHCONTF_NONFOLDERS | SHCONTF.SHCONTF_INCLUDEHIDDEN | SHCONTF.SHCONTF_FLATLIST, byref(enum_id_list))
+
+        while True:
+            shell_item = POINTER(ITEMIDLIST)()
+            shell_fetched = wintypes.ULONG()
+            
+            enum_id_list.Next(1, byref(shell_item), byref(shell_fetched))
+        
+            if shell_fetched.value != 1:
+                break
+
+            variant_font_filename = VARIANT()
+            has_child = False
+            try:
+                font_shell_folder.GetDetailsEx(shell_item, byref(PK_FONTS_FILENAMES), byref(variant_font_filename))
+            except COMError:
+                has_child = True
+
+            if not has_child:
+                # The tuple will always have a length of 1
+                font_filename = variant_font_filename.value[0]
+                if Path(font_filename).suffix.lstrip(".").strip().lower() in WindowsFonts.VALID_FONT_FORMATS_EXTENSION:
+                    fonts_filename.add(font_filename)
+                WindowsFonts._VariantClear(variant_font_filename)
+            else:
+                WindowsFonts._VariantClear(variant_font_filename)
+
+                shell_item_child = POINTER(IShellFolder)()
+                font_shell_folder.BindToObject(shell_item, None, IShellFolder._iid_, byref(shell_item_child))
+
+                enum_id_list_child = POINTER(IEnumIDList)()
+                shell_item_child.EnumObjects(None, SHCONTF.SHCONTF_FOLDERS | SHCONTF.SHCONTF_NONFOLDERS | SHCONTF.SHCONTF_INCLUDEHIDDEN | SHCONTF.SHCONTF_FLATLIST, byref(enum_id_list_child))
+
+                while True:
+                    shell_item_child = POINTER(ITEMIDLIST)()
+                    shell_fetched_child = wintypes.ULONG()
+                    
+                    enum_id_list_child.Next(1, byref(shell_item_child), byref(shell_fetched_child))
+                
+                    if shell_fetched_child.value != 1:
+                        break
+
+                    font_shell_folder.GetDetailsEx(shell_item_child, byref(PK_FONTS_FILENAMES), byref(variant_font_filename))
+                    # The tuple will always have a length of 1
+                    font_filename = variant_font_filename.value[0]
+                    if Path(font_filename).suffix.lstrip(".").strip().lower() in WindowsFonts.VALID_FONT_FORMATS_EXTENSION:
+                        fonts_filename.add(font_filename)
+                    WindowsFonts._VariantClear(variant_font_filename)
+                    WindowsFonts._CoTaskMemFree(shell_item_child)
+            WindowsFonts._CoTaskMemFree(shell_item)
+        WindowsFonts._CoTaskMemFree(pidl_fonts)
+
+        return fonts_filename
+
+
+    @staticmethod
+    def _load_Shell32_CoTaskMemFree_VariantClear():
+        WindowsFonts._Shell32 = windll.Shell32
+
+        # https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderidlist
+        WindowsFonts._Shell32.SHGetKnownFolderIDList.restype = HRESULT
+        WindowsFonts._Shell32.SHGetKnownFolderIDList.argtypes = [POINTER(GUID), wintypes.DWORD, wintypes.HANDLE, POINTER(POINTER(ITEMIDLIST))]
+        
+        # https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shbindtoobject
+        WindowsFonts._Shell32.SHBindToObject.restype = HRESULT
+        WindowsFonts._Shell32.SHBindToObject.argtypes = [POINTER(IShellFolder), POINTER(ITEMIDLIST), POINTER(IBindCtx), GUID, POINTER(wintypes.LPVOID)]
+        
+        # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cotaskmemfree
+        WindowsFonts._CoTaskMemFree = windll.ole32.CoTaskMemFree
+        WindowsFonts._CoTaskMemFree.restype = None
+        WindowsFonts._CoTaskMemFree.argtypes = [POINTER(ITEMIDLIST)]
+
+        # https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-variantclear
+        WindowsFonts._VariantClear = windll.oleaut32.VariantClear
+        WindowsFonts._VariantClear.restype = HRESULT
+        WindowsFonts._VariantClear.argtypes = [POINTER(VARIANT)]
+
 
     @staticmethod
     def _load_DWriteCreateFactory():
@@ -403,6 +645,11 @@ class WindowsVersionHelpers:
                 and windows_version.minor == minor
                 and windows_version.build >= build
             )
+
+    @staticmethod
+    def is_windows_vista_or_greater(windows_version) -> bool:
+        # From https://www.lifewire.com/windows-version-numbers-2625171
+        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 6000)
 
     @staticmethod
     def is_windows_vista_sp2_or_greater(windows_version) -> bool:
