@@ -1,6 +1,7 @@
 from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
 from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
 from enum import IntEnum
+from os.path import isfile
 from sys import getwindowsversion
 from typing import Set
 from .exceptions import OSNotSupported
@@ -292,22 +293,22 @@ class WindowsFonts(SystemFonts):
 
             local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
 
-            is_supported_font_type = wintypes.BOOLEAN()
-            font_file_type = wintypes.UINT()
-            font_face_type = wintypes.UINT()
-            number_of_faces = wintypes.UINT()
-            font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
-
-            if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
-                continue
-
             path_len = wintypes.UINT()
             local_loader.GetFilePathLengthFromKey(font_file_reference_key, font_file_reference_key_size, byref(path_len))
 
             buffer = create_unicode_buffer(path_len.value + 1)
             local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
 
-            fonts_filename.add(buffer.value)
+            font_filename = buffer.value
+            if isfile(font_filename):
+                is_supported_font_type = wintypes.BOOLEAN()
+                font_file_type = wintypes.UINT()
+                font_face_type = wintypes.UINT()
+                number_of_faces = wintypes.UINT()
+                font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
+
+                if DWRITE_FONT_FILE_TYPE(font_file_type.value) in WindowsFonts.VALID_FONT_FORMATS:
+                    fonts_filename.add(buffer.value)
 
         return fonts_filename
 
@@ -332,8 +333,12 @@ class WindowsFonts(SystemFonts):
             sys_collection.GetFontFamily(i, byref(family))
 
             for j in range(family.GetFontCount()):
-                font = POINTER(IDWriteFont)()
-                family.GetFont(j, byref(font))
+                try:
+                    font = POINTER(IDWriteFont)()
+                    family.GetFont(j, byref(font))
+                except COMError:
+                    # If the file doesn't exist, DirectWrite raise an exception
+                    continue
 
                 font_face = POINTER(IDWriteFontFace)()
                 font.CreateFontFace(byref(font_face))
