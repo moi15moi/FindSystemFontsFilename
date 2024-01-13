@@ -1,6 +1,7 @@
 from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
 from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
 from enum import IntEnum
+from pathlib import Path
 from sys import getwindowsversion
 from typing import Set
 from .exceptions import OSNotSupported
@@ -299,7 +300,8 @@ class WindowsFonts(SystemFonts):
             buffer = create_unicode_buffer(path_len.value + 1)
             local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
 
-            fonts_filename.add(buffer.value)
+            normalized_filename = str(Path(buffer.value).resolve())
+            fonts_filename.add(normalized_filename)
 
         return fonts_filename
 
@@ -364,7 +366,8 @@ class WindowsFonts(SystemFonts):
                     buffer = create_unicode_buffer(path_len.value + 1)
                     local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
 
-                    fonts_filename.add(buffer.value)
+                    normalized_filename = str(Path(buffer.value).resolve())
+                    fonts_filename.add(normalized_filename)
 
         return fonts_filename
 
