@@ -14,6 +14,16 @@ pip install FindSystemFontsFilename
 
 ## How to use it
 ```python
+from find_system_fonts_filename import get_system_fonts_filename, FindSystemFontsFilenameException
+
+try:
+    fonts_filename = get_system_fonts_filename()
+except FindSystemFontsFilenameException:
+    # Deal with the exception
+    pass
+```
+### Alternative
+```python
 from find_system_fonts_filename import AndroidLibraryNotFound, get_system_fonts_filename, FontConfigNotFound, OSNotSupported
 
 try:
