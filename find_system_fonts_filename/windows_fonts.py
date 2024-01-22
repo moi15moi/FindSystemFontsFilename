@@ -1,6 +1,7 @@
 from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
 from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
 from enum import IntEnum
+from os.path import isfile
 from sys import getwindowsversion
 from typing import Set
 from .exceptions import OSNotSupported
@@ -24,6 +25,13 @@ class DWRITE_FONT_FILE_TYPE(IntEnum):
     DWRITE_FONT_FILE_TYPE_VECTOR = 6
     DWRITE_FONT_FILE_TYPE_BITMAP = 7
     DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION = DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION
+
+
+class DWRITE_LOCALITY(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite_3/ne-dwrite_3-dwrite_locality
+    DWRITE_LOCALITY_REMOTE = 0
+    DWRITE_LOCALITY_PARTIAL = 1
+    DWRITE_LOCALITY_LOCAL = 2
 
 
 class IDWriteFontFileLoader(IUnknown):
@@ -67,7 +75,7 @@ class IDWriteFontFaceReference(IUnknown):
         STDMETHOD(None, "GetLocalFileSize"),  # Need to be implemented
         STDMETHOD(None, "GetFileSize"),  # Need to be implemented
         STDMETHOD(None, "GetFileTime"),  # Need to be implemented
-        STDMETHOD(None, "GetLocality"),  # Need to be implemented
+        STDMETHOD(wintypes.UINT, "GetLocality"),
         STDMETHOD(None, "EnqueueFontDownloadRequest"),  # Need to be implemented
         STDMETHOD(None, "EnqueueCharacterDownloadRequest"),  # Need to be implemented
         STDMETHOD(None, "EnqueueGlyphDownloadRequest"),  # Need to be implemented
@@ -269,6 +277,10 @@ class WindowsFonts(SystemFonts):
             font_face_reference = POINTER(IDWriteFontFaceReference)()
             font_set.GetFontFaceReference(i, byref(font_face_reference))
 
+            locality = font_face_reference.GetLocality()
+            if DWRITE_LOCALITY(locality) != DWRITE_LOCALITY.DWRITE_LOCALITY_LOCAL:
+                continue
+
             font_file = POINTER(IDWriteFontFile)()
             font_face_reference.GetFontFile(byref(font_file))
 
@@ -279,19 +291,7 @@ class WindowsFonts(SystemFonts):
             font_file_reference_key_size = wintypes.UINT()
             font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
 
-            try:
-                local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-            except COMError:
-                continue
-
-            is_supported_font_type = wintypes.BOOLEAN()
-            font_file_type = wintypes.UINT()
-            font_face_type = wintypes.UINT()
-            number_of_faces = wintypes.UINT()
-            font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
-
-            if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
-                continue
+            local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
 
             path_len = wintypes.UINT()
             local_loader.GetFilePathLengthFromKey(font_file_reference_key, font_file_reference_key_size, byref(path_len))
@@ -299,7 +299,16 @@ class WindowsFonts(SystemFonts):
             buffer = create_unicode_buffer(path_len.value + 1)
             local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
 
-            fonts_filename.add(buffer.value)
+            font_filename = buffer.value
+            if isfile(font_filename):
+                is_supported_font_type = wintypes.BOOLEAN()
+                font_file_type = wintypes.UINT()
+                font_face_type = wintypes.UINT()
+                number_of_faces = wintypes.UINT()
+                font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
+
+                if DWRITE_FONT_FILE_TYPE(font_file_type.value) in WindowsFonts.VALID_FONT_FORMATS:
+                    fonts_filename.add(buffer.value)
 
         return fonts_filename
 
@@ -324,8 +333,12 @@ class WindowsFonts(SystemFonts):
             sys_collection.GetFontFamily(i, byref(family))
 
             for j in range(family.GetFontCount()):
-                font = POINTER(IDWriteFont)()
-                family.GetFont(j, byref(font))
+                try:
+                    font = POINTER(IDWriteFont)()
+                    family.GetFont(j, byref(font))
+                except COMError:
+                    # If the file doesn't exist, DirectWrite raise an exception
+                    continue
 
                 font_face = POINTER(IDWriteFontFace)()
                 font.CreateFontFace(byref(font_face))
@@ -344,10 +357,7 @@ class WindowsFonts(SystemFonts):
                     loader = POINTER(IDWriteFontFileLoader)()
                     font_file.GetLoader(byref(loader))
 
-                    try:
-                        local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-                    except COMError:
-                        continue
+                    local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
 
                     is_supported_font_type = wintypes.BOOLEAN()
                     font_file_type = wintypes.UINT()
@@ -377,13 +387,13 @@ class WindowsFonts(SystemFonts):
 
 class WindowsVersionHelpers:
     @staticmethod
-    def is_windows_version_or_greater(windows_version, major: int, minor: int, service_pack_major: int) -> bool:
+    def is_windows_version_or_greater(windows_version, major: int, minor: int, build: int) -> bool:
         """
         Parameters:
             windows_version: An object from getwindowsversion.
             major (int): The minimum major OS version number.
             minor (int): The minimum minor OS version number.
-            service_pack_major (int): The minimum major Service Pack version number.
+            build (int): The minimum build version number.
         Returns:
             True if the specified version matches or if it is greater than the version of the current Windows OS. Otherwise, False.
         """
@@ -396,13 +406,15 @@ class WindowsVersionHelpers:
             return (
                 windows_version.major == major
                 and windows_version.minor == minor
-                and windows_version.service_pack_major >= service_pack_major
+                and windows_version.build >= build
             )
 
     @staticmethod
     def is_windows_vista_sp2_or_greater(windows_version) -> bool:
-        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 2)
+        # From https://www.lifewire.com/windows-version-numbers-2625171
+        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 6002)
 
     @staticmethod
     def is_windows_10_or_greater(windows_version) -> bool:
-        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 0)
+        # From https://www.lifewire.com/windows-version-numbers-2625171
+        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 10240)
