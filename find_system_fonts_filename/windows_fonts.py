@@ -291,7 +291,26 @@ class WindowsFonts(SystemFonts):
             font_file_reference_key_size = wintypes.UINT()
             font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
 
-            local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
+            # For a user, even if IDWriteFontFaceReference::GetLocality returned DWRITE_LOCALITY_LOCAL,
+            # the QueryInterface always fails for one specific font.
+            # I did a bunch of tests with him to try to understand why it fails.
+            # Here are my conclusions:
+            # First, with IDWriteFontFace3::GetInformationalStrings, we found the family name of the problematic font. It was "Levenim MT".
+            # Secondly, WindowsFonts._get_fonts_filename_windows_vista_sp2_or_more doesn't list "Levenim MT",
+            # so QueryInterface doesn't raise an exception.
+            # Thirdly, EnumFontFamiliesEx didn't enumerate "Levenim MT". Also, TextOut also doesn't display the font.
+            # Fourthly, if we search "Levenim MT" with IDWriteFontSet::GetMatchingFonts, the font is not found.
+            # Fifthly, the font doesn't show up in "C:\Windows\Fonts".
+            # Sixthly, in Word, Aegisub, Paint.NET, libass, and VSFilter the font doesn't show up.
+            # Finally, with IDWriteFontFileStream, we have been able to get the file.
+            #   So the font should be physically on the hard drive, but we couldn't find it.
+            #   If we are able to get the data of the font file, why can't we display the font in any software?
+            # This seems to be a DirectWrite bug. To bypass it, if QueryInterface fails, ignore the font.
+            # Anyways, the font cannot be displayed, so it doesn't matter.
+            try:
+                local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
+            except COMError:
+                continue
 
             path_len = wintypes.UINT()
             local_loader.GetFilePathLengthFromKey(font_file_reference_key, font_file_reference_key_size, byref(path_len))
