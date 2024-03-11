@@ -1,6 +1,6 @@
 from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
 from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from os.path import isfile
 from sys import getwindowsversion
 from typing import Set
@@ -32,6 +32,13 @@ class DWRITE_LOCALITY(IntEnum):
     DWRITE_LOCALITY_REMOTE = 0
     DWRITE_LOCALITY_PARTIAL = 1
     DWRITE_LOCALITY_LOCAL = 2
+
+
+class DWRITE_FONT_SIMULATIONS(IntFlag):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_font_simulations
+    DWRITE_FONT_SIMULATIONS_NONE = 0x0000
+    DWRITE_FONT_SIMULATIONS_BOLD = 0x0001
+    DWRITE_FONT_SIMULATIONS_OBLIQUE = 0x0002
 
 
 class IDWriteFontFileLoader(IUnknown):
@@ -133,7 +140,7 @@ class IDWriteFont(IUnknown):
         STDMETHOD(None, "IsSymbolFont"),  # Need to be implemented
         STDMETHOD(None, "GetFaceNames"),  # Need to be implemented
         STDMETHOD(None, "GetInformationalStrings"),  # Need to be implemented
-        STDMETHOD(None, "GetSimulations"),  # Need to be implemented
+        STDMETHOD(wintypes.UINT, "GetSimulations"),
         STDMETHOD(None, "GetMetrics"),  # Need to be implemented
         STDMETHOD(None, "HasCharacter"),  # Need to be implemented
         STDMETHOD(HRESULT, "CreateFontFace", [POINTER(POINTER(IDWriteFontFace))]),
@@ -368,6 +375,9 @@ class WindowsFonts(SystemFonts):
                     family.GetFont(j, byref(font))
                 except COMError:
                     # If the file doesn't exist, DirectWrite raise an exception
+                    continue
+
+                if font.GetSimulations() != DWRITE_FONT_SIMULATIONS.DWRITE_FONT_SIMULATIONS_NONE:
                     continue
 
                 font_face = POINTER(IDWriteFontFace)()
