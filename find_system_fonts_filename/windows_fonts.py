@@ -171,11 +171,19 @@ class IDWriteFontCollection(IUnknown):
     ]
 
 
+class IDWriteFontCollection1(IDWriteFontCollection):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite_3/nn-dwrite_3-idwritefontcollection1
+    _iid_ = GUID("{53585141-D9F8-4095-8321-D73CF6BD116C}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "GetFontSet", [POINTER(POINTER(IDWriteFontSet))])
+    ]
+
+
 class IDWriteFactory(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefactory
     _iid_ = GUID("{b859ee5a-d838-4b5b-a2e8-1adc7d93db48}")
     _methods_ = [
-        STDMETHOD(HRESULT, "GetSystemFontCollection", [POINTER(POINTER(IDWriteFontCollection)), wintypes.BOOLEAN]),
+        STDMETHOD(HRESULT, "GetSystemFontCollection1", [POINTER(POINTER(IDWriteFontCollection)), wintypes.BOOL]),
         STDMETHOD(None, "CreateCustomFontCollection"),  # Need to be implemented
         STDMETHOD(None, "RegisterFontCollectionLoader"),  # Need to be implemented
         STDMETHOD(None, "UnregisterFontCollectionLoader"),  # Need to be implemented
@@ -231,7 +239,7 @@ class IDWriteFactory3(IDWriteFactory2):
         STDMETHOD(HRESULT, "GetSystemFontSet", [POINTER(POINTER(IDWriteFontSet))]),
         STDMETHOD(None, "CreateFontSetBuilder"),  # Need to be implemented
         STDMETHOD(None, "CreateFontCollectionFromFontSet"),  # Need to be implemented
-        STDMETHOD(None, "GetSystemFontCollection3"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetSystemFontCollection2", [wintypes.BOOL, POINTER(POINTER(IDWriteFontCollection1)), wintypes.BOOL]),
         STDMETHOD(None, "GetFontDownloadQueue"),  # Need to be implemented
     ]
 
@@ -270,8 +278,11 @@ class WindowsFonts(SystemFonts):
         dwrite_factory = POINTER(IDWriteFactory3)()
         WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory3._iid_, byref(dwrite_factory))
 
+        font_collection = POINTER(IDWriteFontCollection1)()
+        dwrite_factory.GetSystemFontCollection2(False, byref(font_collection), True)
+
         font_set = POINTER(IDWriteFontSet)()
-        dwrite_factory.GetSystemFontSet(byref(font_set))
+        font_collection.GetFontSet(byref(font_set))
 
         for i in range(font_set.GetFontCount()):
             font_face_reference = POINTER(IDWriteFontFaceReference)()
@@ -345,7 +356,7 @@ class WindowsFonts(SystemFonts):
         WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory._iid_, byref(dwrite_factory))
 
         sys_collection = POINTER(IDWriteFontCollection)()
-        dwrite_factory.GetSystemFontCollection(byref(sys_collection), False)
+        dwrite_factory.GetSystemFontCollection1(byref(sys_collection), True)
 
         for i in range(sys_collection.GetFontFamilyCount()):
             family = POINTER(IDWriteFontFamily)()
