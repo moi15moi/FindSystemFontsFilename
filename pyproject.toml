@@ -1,0 +1,37 @@
+[project]
+name = "FindSystemFontsFilename"
+description = "Find the system fonts filename."
+authors = [
+    { name = "moi15moi", email = "moi15moismokerlolilol@gmail.com" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "comtypes; platform_system=='Windows'",
+]
+classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "License :: OSI Approved :: MIT License",
+]
+dynamic = ["version"]
+
+[project.urls]
+Source = "https://github.com/moi15moi/FindSystemFontsFilename/"
+Tracker = "https://github.com/moi15moi/FindSystemFontsFilename/issues/"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "find_system_fonts_filename.__init__.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["find_system_fonts_filename*"]

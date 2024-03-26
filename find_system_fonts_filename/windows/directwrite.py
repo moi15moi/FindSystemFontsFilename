@@ -1,11 +1,32 @@
-from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
-from ctypes import byref, create_unicode_buffer, POINTER, windll, wintypes
+from .gdi import LOGFONTW
+from comtypes import GUID, HRESULT, IUnknown, STDMETHOD
+from ctypes import POINTER, windll, wintypes
 from enum import IntEnum, IntFlag
-from os.path import isfile
-from sys import getwindowsversion
-from typing import Set
-from .exceptions import OSNotSupported
-from .system_fonts import SystemFonts
+
+__all__ = [
+    "DWRITE_FACTORY_TYPE",
+    "DWRITE_FONT_FILE_TYPE",
+    "DWRITE_LOCALITY",
+    "DWRITE_FONT_SIMULATIONS",
+    "IDWriteFontFileLoader",
+    "IDWriteLocalFontFileLoader",
+    "IDWriteFontFile",
+    "IDWriteFontFaceReference",
+    "IDWriteFontSet",
+    "IDWriteFontFace",
+    "IDWriteFont",
+    "IDWriteFontList",
+    "IDWriteFontFamily",
+    "IDWriteFontCollection",
+    "IDWriteFontCollection1",
+    "IDWriteFontSetBuilder",
+    "IDWriteGdiInterop",
+    "IDWriteFactory",
+    "IDWriteFactory1",
+    "IDWriteFactory2",
+    "IDWriteFactory3",
+    "DirectWrite",
+]
 
 
 class DWRITE_FACTORY_TYPE(IntEnum):
@@ -132,19 +153,6 @@ class IDWriteFontFace(IUnknown):
 class IDWriteFont(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefont
     _iid_ = GUID("{acd16696-8c14-4f5d-877e-fe3fc1d32737}")
-    _methods_ = [
-        STDMETHOD(None, "GetFontFamily"),  # Need to be implemented
-        STDMETHOD(None, "GetWeight"),  # Need to be implemented
-        STDMETHOD(None, "GetStretch"),  # Need to be implemented
-        STDMETHOD(None, "GetStyle"),  # Need to be implemented
-        STDMETHOD(None, "IsSymbolFont"),  # Need to be implemented
-        STDMETHOD(None, "GetFaceNames"),  # Need to be implemented
-        STDMETHOD(None, "GetInformationalStrings"),  # Need to be implemented
-        STDMETHOD(wintypes.UINT, "GetSimulations"),
-        STDMETHOD(None, "GetMetrics"),  # Need to be implemented
-        STDMETHOD(None, "HasCharacter"),  # Need to be implemented
-        STDMETHOD(HRESULT, "CreateFontFace", [POINTER(POINTER(IDWriteFontFace))]),
-    ]
 
 
 class IDWriteFontList(IUnknown):
@@ -164,6 +172,21 @@ class IDWriteFontFamily(IDWriteFontList):
         STDMETHOD(None, "GetFamilyNames"),  # Need to be implemented
         STDMETHOD(None, "GetFirstMatchingFont"),  # Need to be implemented
         STDMETHOD(None, "GetMatchingFonts"),  # Need to be implemented
+    ]
+
+
+IDWriteFont._methods_ = [
+        STDMETHOD(HRESULT, "GetFontFamily", [POINTER(POINTER(IDWriteFontFamily))]),
+        STDMETHOD(None, "GetWeight"),  # Need to be implemented
+        STDMETHOD(None, "GetStretch"),  # Need to be implemented
+        STDMETHOD(None, "GetStyle"),  # Need to be implemented
+        STDMETHOD(None, "IsSymbolFont"),  # Need to be implemented
+        STDMETHOD(None, "GetFaceNames"),  # Need to be implemented
+        STDMETHOD(None, "GetInformationalStrings"),  # Need to be implemented
+        STDMETHOD(wintypes.UINT, "GetSimulations"),
+        STDMETHOD(None, "GetMetrics"),  # Need to be implemented
+        STDMETHOD(None, "HasCharacter"),  # Need to be implemented
+        STDMETHOD(HRESULT, "CreateFontFace", [POINTER(POINTER(IDWriteFontFace))]),
     ]
 
 
@@ -197,6 +220,17 @@ class IDWriteFontSetBuilder(IUnknown):
     ]
 
 
+class IDWriteGdiInterop(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritegdiinterop-createfontfromlogfont
+    _iid_ = GUID("{1edd9491-9853-4299-898f-6432983b6f3a}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "CreateFontFromLOGFONT", [POINTER(LOGFONTW), POINTER(POINTER(IDWriteFont))]),
+        STDMETHOD(None, "ConvertFontToLOGFONT"),  # Need to be implemented
+        STDMETHOD(None, "ConvertFontFaceToLOGFONT"),  # Need to be implemented
+        STDMETHOD(HRESULT, "CreateFontFaceFromHdc", [wintypes.HDC, POINTER(POINTER(IDWriteFontFace))]),
+        STDMETHOD(None, "CreateBitmapRenderTarget"),  # Need to be implemented
+    ]
+
 
 class IDWriteFactory(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefactory
@@ -216,7 +250,7 @@ class IDWriteFactory(IUnknown):
         STDMETHOD(None, "UnregisterFontFileLoader"),  # Need to be implemented
         STDMETHOD(None, "CreateTextFormat"),  # Need to be implemented
         STDMETHOD(None, "CreateTypography"),  # Need to be implemented
-        STDMETHOD(None, "GetGdiInterop"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetGdiInterop", [POINTER(POINTER(IDWriteGdiInterop))]),
         STDMETHOD(None, "CreateTextLayout"),  # Need to be implemented
         STDMETHOD(None, "CreateGdiCompatibleTextLayout"),  # Need to be implemented
         STDMETHOD(None, "CreateEllipsisTrimmingSign"),  # Need to be implemented
@@ -263,223 +297,11 @@ class IDWriteFactory3(IDWriteFactory2):
     ]
 
 
-class WindowsFonts(SystemFonts):
-    _DWriteCreateFactory = None
-    VALID_FONT_FORMATS = [
-        DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_CFF,
-        DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE,
-        DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION,
-        DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION,
-    ]
+class DirectWrite:
+    def __init__(self):
+        dwrite = windll.dwrite
 
-    def get_system_fonts_filename() -> Set[str]:
-        windows_version = getwindowsversion()
-
-        if WindowsVersionHelpers.is_windows_10_or_greater(windows_version):
-            fonts_filename = WindowsFonts._get_fonts_filename_windows_10_or_more()
-        elif WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
-            fonts_filename = WindowsFonts._get_fonts_filename_windows_vista_sp2_or_more()
-        else:
-            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
-
-        return fonts_filename
-
-    @staticmethod
-    def _get_fonts_filename_windows_10_or_more() -> Set[str]:
-        """
-        Return an set of all the installed fonts filename.
-        """
-        if WindowsFonts._DWriteCreateFactory is None:
-            WindowsFonts._load_DWriteCreateFactory()
-
-        fonts_filename = set()
-
-        dwrite_factory = POINTER(IDWriteFactory3)()
-        WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory3._iid_, byref(dwrite_factory))
-
-        font_collection_check_updated_false = POINTER(IDWriteFontCollection1)()
-        dwrite_factory.GetSystemFontCollection2(False, byref(font_collection_check_updated_false), False)
-        font_set_check_updated_false = POINTER(IDWriteFontSet)()
-        font_collection_check_updated_false.GetFontSet(byref(font_set_check_updated_false))
-        
-        font_collection_check_updated_true = POINTER(IDWriteFontCollection1)()
-        dwrite_factory.GetSystemFontCollection2(False, byref(font_collection_check_updated_true), True)
-        font_set_check_updated_true = POINTER(IDWriteFontSet)()
-        font_collection_check_updated_true.GetFontSet(byref(font_set_check_updated_true))
-
-        font_set_builder = POINTER(IDWriteFontSetBuilder)()
-        dwrite_factory.CreateFontSetBuilder(byref(font_set_builder))
-
-        font_set_builder.AddFontSet(font_set_check_updated_false)
-        font_set_builder.AddFontSet(font_set_check_updated_true)
-
-        font_set = POINTER(IDWriteFontSet)()
-        font_set_builder.CreateFontSet(byref(font_set))
-
-        for i in range(font_set.GetFontCount()):
-            font_face_reference = POINTER(IDWriteFontFaceReference)()
-            font_set.GetFontFaceReference(i, byref(font_face_reference))
-
-            locality = font_face_reference.GetLocality()
-            if DWRITE_LOCALITY(locality) != DWRITE_LOCALITY.DWRITE_LOCALITY_LOCAL:
-                continue
-
-            font_file = POINTER(IDWriteFontFile)()
-            font_face_reference.GetFontFile(byref(font_file))
-
-            loader = POINTER(IDWriteFontFileLoader)()
-            font_file.GetLoader(byref(loader))
-
-            font_file_reference_key = wintypes.LPCVOID()
-            font_file_reference_key_size = wintypes.UINT()
-            font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
-
-            # For a user, even if IDWriteFontFaceReference::GetLocality returned DWRITE_LOCALITY_LOCAL,
-            # the QueryInterface always fails for one specific font.
-            # I did a bunch of tests with him to try to understand why it fails.
-            # Here are my conclusions:
-            # First, with IDWriteFontFace3::GetInformationalStrings, we found the family name of the problematic font. It was "Levenim MT".
-            # Secondly, WindowsFonts._get_fonts_filename_windows_vista_sp2_or_more doesn't list "Levenim MT",
-            # so QueryInterface doesn't raise an exception.
-            # Thirdly, EnumFontFamiliesEx didn't enumerate "Levenim MT". Also, TextOut also doesn't display the font.
-            # Fourthly, if we search "Levenim MT" with IDWriteFontSet::GetMatchingFonts, the font is not found.
-            # Fifthly, the font doesn't show up in "C:\Windows\Fonts".
-            # Sixthly, in Word, Aegisub, Paint.NET, libass, and VSFilter the font doesn't show up.
-            # Finally, with IDWriteFontFileStream, we have been able to get the file.
-            #   So the font should be physically on the hard drive, but we couldn't find it.
-            #   If we are able to get the data of the font file, why can't we display the font in any software?
-            # This seems to be a DirectWrite bug. To bypass it, if QueryInterface fails, ignore the font.
-            # Anyways, the font cannot be displayed, so it doesn't matter.
-            try:
-                local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-            except COMError:
-                continue
-
-            path_len = wintypes.UINT()
-            local_loader.GetFilePathLengthFromKey(font_file_reference_key, font_file_reference_key_size, byref(path_len))
-
-            buffer = create_unicode_buffer(path_len.value + 1)
-            local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
-
-            font_filename = buffer.value
-            if isfile(font_filename):
-                is_supported_font_type = wintypes.BOOLEAN()
-                font_file_type = wintypes.UINT()
-                font_face_type = wintypes.UINT()
-                number_of_faces = wintypes.UINT()
-                font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
-
-                if DWRITE_FONT_FILE_TYPE(font_file_type.value) in WindowsFonts.VALID_FONT_FORMATS:
-                    fonts_filename.add(buffer.value)
-
-        return fonts_filename
-
-    @staticmethod
-    def _get_fonts_filename_windows_vista_sp2_or_more() -> Set[str]:
-        """
-        Return an set of all the installed fonts filename.
-        """
-        if WindowsFonts._DWriteCreateFactory is None:
-            WindowsFonts._load_DWriteCreateFactory()
-
-        fonts_filename = set()
-
-        dwrite_factory = POINTER(IDWriteFactory)()
-        WindowsFonts._DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory._iid_, byref(dwrite_factory))
-
-        sys_collection = POINTER(IDWriteFontCollection)()
-        dwrite_factory.GetSystemFontCollection1(byref(sys_collection), True)
-
-        for i in range(sys_collection.GetFontFamilyCount()):
-            family = POINTER(IDWriteFontFamily)()
-            sys_collection.GetFontFamily(i, byref(family))
-
-            for j in range(family.GetFontCount()):
-                try:
-                    font = POINTER(IDWriteFont)()
-                    family.GetFont(j, byref(font))
-                except COMError:
-                    # If the file doesn't exist, DirectWrite raise an exception
-                    continue
-
-                if font.GetSimulations() != DWRITE_FONT_SIMULATIONS.DWRITE_FONT_SIMULATIONS_NONE:
-                    continue
-
-                font_face = POINTER(IDWriteFontFace)()
-                font.CreateFontFace(byref(font_face))
-
-                file_count = wintypes.UINT()
-                font_face.GetFiles(byref(file_count), None)
-
-                font_files = (POINTER(IDWriteFontFile) * file_count.value)()
-                font_face.GetFiles(byref(file_count), font_files)
-
-                for font_file in font_files:
-                    font_file_reference_key = wintypes.LPCVOID()
-                    font_file_reference_key_size = wintypes.UINT()
-                    font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
-
-                    loader = POINTER(IDWriteFontFileLoader)()
-                    font_file.GetLoader(byref(loader))
-
-                    local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
-
-                    is_supported_font_type = wintypes.BOOLEAN()
-                    font_file_type = wintypes.UINT()
-                    font_face_type = wintypes.UINT()
-                    number_of_faces = wintypes.UINT()
-                    font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
-
-                    if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
-                        continue
-
-                    path_len = wintypes.UINT()
-                    local_loader.GetFilePathLengthFromKey(font_file_reference_key, font_file_reference_key_size, byref(path_len))
-
-                    buffer = create_unicode_buffer(path_len.value + 1)
-                    local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
-
-                    fonts_filename.add(buffer.value)
-
-        return fonts_filename
-
-    @staticmethod
-    def _load_DWriteCreateFactory():
-        WindowsFonts._DWriteCreateFactory = windll.dwrite.DWriteCreateFactory
-        WindowsFonts._DWriteCreateFactory.restype = HRESULT
-        WindowsFonts._DWriteCreateFactory.argtypes = [wintypes.UINT, GUID, POINTER(POINTER(IUnknown))]
-
-
-class WindowsVersionHelpers:
-    @staticmethod
-    def is_windows_version_or_greater(windows_version, major: int, minor: int, build: int) -> bool:
-        """
-        Parameters:
-            windows_version: An object from getwindowsversion.
-            major (int): The minimum major OS version number.
-            minor (int): The minimum minor OS version number.
-            build (int): The minimum build version number.
-        Returns:
-            True if the specified version matches or if it is greater than the version of the current Windows OS. Otherwise, False.
-        """
-
-        if windows_version.major > major:
-            return True
-        elif windows_version.major == major and windows_version.minor > minor:
-            return True
-        else:
-            return (
-                windows_version.major == major
-                and windows_version.minor == minor
-                and windows_version.build >= build
-            )
-
-    @staticmethod
-    def is_windows_vista_sp2_or_greater(windows_version) -> bool:
-        # From https://www.lifewire.com/windows-version-numbers-2625171
-        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 6002)
-
-    @staticmethod
-    def is_windows_10_or_greater(windows_version) -> bool:
-        # From https://www.lifewire.com/windows-version-numbers-2625171
-        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 10240)
+        # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-dwritecreatefactory
+        self.DWriteCreateFactory = dwrite.DWriteCreateFactory
+        self.DWriteCreateFactory.restype = HRESULT
+        self.DWriteCreateFactory.argtypes = [wintypes.UINT, GUID, POINTER(POINTER(IUnknown))]
