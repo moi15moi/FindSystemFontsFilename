@@ -8,7 +8,7 @@ def get_system_fonts_filename() -> Set[str]:
     system_name = system()
 
     if system_name == "Windows":
-        from .windows_fonts import WindowsFonts
+        from .windows import WindowsFonts
         return WindowsFonts.get_system_fonts_filename()
 
     elif system_name == "Linux":
