@@ -156,6 +156,8 @@ class WindowsFonts(SystemFonts):
         enum_data = EnumData(gdi, gdi_interop, sys_collection, fonts_filename, dc, False)
         object_enum_data = py_object(enum_data)
 
+        # See this link to understand why I do a EnumFontsW and then a EnumFontFamiliesW
+        # https://stackoverflow.com/a/62405274/15835974
         gdi.EnumFontsW(dc, None, gdi.ENUMFONTFAMEXPROC(enum_fonts_w), addressof(object_enum_data))
         gdi.DeleteDC(dc)
 
