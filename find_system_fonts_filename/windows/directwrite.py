@@ -197,7 +197,7 @@ class IDWriteFontCollection(IUnknown):
         STDMETHOD(wintypes.UINT, "GetFontFamilyCount"),
         STDMETHOD(HRESULT, "GetFontFamily", [wintypes.UINT, POINTER(POINTER(IDWriteFontFamily))]),
         STDMETHOD(None, "FindFamilyName"),  # Need to be implemented
-        STDMETHOD(None, "GetFontFromFontFace"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetFontFromFontFace", [POINTER(IDWriteFontFace), POINTER(POINTER(IDWriteFont))]),
     ]
 
 
