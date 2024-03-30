@@ -80,27 +80,32 @@ def enum_font_families_w(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRIC, font_
         error = True
     
     if not error:
-        # TODO See if this line is usefull on Windows 11
-        # enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(font_face))
+        try:
+            font = POINTER(IDWriteFont)()
+            enum_data.dwrite_collection.GetFontFromFontFace(font_face, byref(font))
+        except COMError:
+            # On Windows 11, this can raise a DWRITE_E_NOFONT
+            # See issue #14
+            # https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-10
+            enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(font_face))
+            error = True
 
-        font = POINTER(IDWriteFont)()
-        enum_data.dwrite_collection.GetFontFromFontFace(font_face, byref(font))
+        if not error:
+            family = POINTER(IDWriteFontFamily)()
+            font.GetFontFamily(byref(family))
 
-        family = POINTER(IDWriteFontFamily)()
-        font.GetFontFamily(byref(family))
+            for i in range(family.GetFontCount()):
+                try:
+                    font = POINTER(IDWriteFont)()
+                    family.GetFont(i, byref(font))
+                except COMError:
+                    # If the file doesn't exist, DirectWrite raise an exception
+                    continue
 
-        for i in range(family.GetFontCount()):
-            try:
-                font = POINTER(IDWriteFont)()
-                family.GetFont(i, byref(font))
-            except COMError:
-                # If the file doesn't exist, DirectWrite raise an exception
-                continue
+                new_font_face = POINTER(IDWriteFontFace)()
+                font.CreateFontFace(byref(new_font_face))
 
-            new_font_face = POINTER(IDWriteFontFace)()
-            font.CreateFontFace(byref(new_font_face))
-
-            enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(new_font_face))
+                enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(new_font_face))
 
     enum_data.gdi.DeleteObject(hfont)
 
