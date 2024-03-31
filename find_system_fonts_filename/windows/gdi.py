@@ -184,6 +184,17 @@ class GDI:
 
         self.LF_FACESIZE = 32
 
+        self.AddFontResourceW = gdi.AddFontResourceW
+        self.AddFontResourceW.restype = wintypes.INT
+        self.AddFontResourceW.argtypes = [wintypes.LPCWSTR]
+        self.AddFontResourceW.errcheck = self.errcheck_is_result_0_or_null
+
+        self.RemoveFontResourceW = gdi.RemoveFontResourceW
+        self.RemoveFontResourceW.restype = wintypes.BOOLEAN
+        self.RemoveFontResourceW.argtypes = [wintypes.LPCWSTR]
+        self.RemoveFontResourceW.errcheck = self.errcheck_is_result_0_or_null
+
+
     @staticmethod
     def errcheck_is_result_0_or_null(result, func, args):
         if not result:

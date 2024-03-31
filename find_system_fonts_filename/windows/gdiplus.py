@@ -86,6 +86,24 @@ class GDIPlus:
         self.GdipNewInstalledFontCollection.errcheck = GDIPlus.gpstatus_errcheck
 
         # https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-font-flat
+        self.GdipNewPrivateFontCollection = gdiplus.GdipNewPrivateFontCollection
+        self.GdipNewPrivateFontCollection.restype = wintypes.UINT
+        self.GdipNewPrivateFontCollection.argtypes = [wintypes.LPVOID]
+        self.GdipNewPrivateFontCollection.errcheck = GDIPlus.gpstatus_errcheck
+
+        # https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-font-flat
+        self.GdipDeletePrivateFontCollection = gdiplus.GdipDeletePrivateFontCollection
+        self.GdipDeletePrivateFontCollection.restype = wintypes.UINT
+        self.GdipDeletePrivateFontCollection.argtypes = [wintypes.LPVOID]
+        self.GdipDeletePrivateFontCollection.errcheck = GDIPlus.gpstatus_errcheck
+
+        # https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-font-flat
+        self.GdipPrivateAddFontFile = gdiplus.GdipPrivateAddFontFile
+        self.GdipPrivateAddFontFile.restype = wintypes.UINT
+        self.GdipPrivateAddFontFile.argtypes = [wintypes.LPVOID, POINTER(wintypes.WCHAR)]
+        self.GdipPrivateAddFontFile.errcheck = GDIPlus.gpstatus_errcheck
+
+        # https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-font-flat
         self.GdipGetFontCollectionFamilyCount = gdiplus.GdipGetFontCollectionFamilyCount
         self.GdipGetFontCollectionFamilyCount.restype = wintypes.UINT
         self.GdipGetFontCollectionFamilyCount.argtypes = [wintypes.LPVOID, POINTER(wintypes.INT)]
@@ -138,6 +156,12 @@ class GDIPlus:
         self.GdipIsStyleAvailable.restype = wintypes.UINT
         self.GdipIsStyleAvailable.argtypes = [wintypes.LPVOID, wintypes.INT, POINTER(wintypes.BOOL)]
         self.GdipIsStyleAvailable.errcheck = GDIPlus.gpstatus_errcheck
+
+        # https://learn.microsoft.com/en-US/windows/win32/gdiplus/-gdiplus-fontfamily-flat
+        self.GdipDeleteFontFamily = gdiplus.GdipDeleteFontFamily
+        self.GdipDeleteFontFamily.restype = wintypes.UINT
+        self.GdipDeleteFontFamily.argtypes = [wintypes.LPVOID]
+        self.GdipDeleteFontFamily.errcheck = GDIPlus.gpstatus_errcheck
 
         # https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-graphics-flat
         self.GdipCreateFromHDC = gdiplus.GdipCreateFromHDC
