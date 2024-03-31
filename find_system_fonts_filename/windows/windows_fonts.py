@@ -1,41 +1,24 @@
 from .directwrite import (
     DWRITE_FACTORY_TYPE,
-    DWRITE_FONT_FILE_TYPE,
-    DWRITE_LOCALITY,
-    DWRITE_FONT_SIMULATIONS,
     IDWriteFontFileLoader,
     IDWriteLocalFontFileLoader,
     IDWriteFontFile,
-    IDWriteFontFaceReference,
-    IDWriteFontSet,
     IDWriteFontFace,
-    IDWriteFont,
-    IDWriteFontList,
-    IDWriteFontFamily,
-    IDWriteFontCollection,
-    IDWriteFontCollection1,
-    IDWriteFontSetBuilder,
     IDWriteGdiInterop,
     IDWriteFactory,
-    IDWriteFactory1,
-    IDWriteFactory2,
-    IDWriteFactory3,
     DirectWrite,
 )
-from .gdi import GDI, LOGFONTW, ENUMLOGFONTEXW, TEXTMETRIC, CharacterSet
-from .gdiplus import FontStyle, GDIPlus, GdiplusStartupInput, GdiplusStartupOutput
+from .gdi import GDI, ENUMLOGFONTEXW, TEXTMETRIC
+from .msvcrt import MSVCRT
 from .version_helpers import WindowsVersionHelpers
-from comtypes import COMError, GUID, HRESULT, IUnknown, STDMETHOD
-from ctypes import addressof, byref, create_unicode_buffer, POINTER, py_object, windll, wintypes
-from os.path import isfile
-from sys import getwindowsversion
-from typing import List, Set
 from ..exceptions import OSNotSupported
 from ..system_fonts import SystemFonts
+from comtypes import COMError
+from ctypes import addressof, byref, create_unicode_buffer, POINTER, py_object, wintypes
+from sys import getwindowsversion
+from typing import Set
 
-__all__ = [
-    "WindowsFonts"
-]
+__all__ = ["WindowsFonts"]
 
 def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
     fonts_filename: Set[str] = set()
@@ -69,6 +52,10 @@ def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
 def enum_font_families_w(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRIC, font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
     enum_data: EnumData = py_object.from_address(lparam).value
 
+    lfFaceName = create_unicode_buffer(enum_data.gdi.LF_FACESIZE)
+    enum_data.msvcrt.wcsncpy_s(lfFaceName, enum_data.gdi.LF_FACESIZE, logfont.elfFullName, enum_data.msvcrt.TRUNCATE)
+    logfont.elfLogFont.lfFaceName = lfFaceName.value
+
     hfont = enum_data.gdi.CreateFontIndirectW(byref(logfont.elfLogFont))
     enum_data.gdi.SelectObject(enum_data.dc, hfont)
 
@@ -80,33 +67,7 @@ def enum_font_families_w(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRIC, font_
         error = True
     
     if not error:
-        try:
-            font = POINTER(IDWriteFont)()
-            enum_data.dwrite_collection.GetFontFromFontFace(font_face, byref(font))
-        except COMError:
-            # On Windows 11, this can raise a DWRITE_E_NOFONT
-            # See issue #14
-            # https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-10
-            enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(font_face))
-            error = True
-
-        if not error:
-            family = POINTER(IDWriteFontFamily)()
-            font.GetFontFamily(byref(family))
-
-            for i in range(family.GetFontCount()):
-                try:
-                    font = POINTER(IDWriteFont)()
-                    family.GetFont(i, byref(font))
-                except COMError:
-                    # If the file doesn't exist, DirectWrite raise an exception
-                    continue
-
-                new_font_face = POINTER(IDWriteFontFace)()
-                font.CreateFontFace(byref(new_font_face))
-
-                enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(new_font_face))
-
+        enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(font_face))
     enum_data.gdi.DeleteObject(hfont)
 
     return True
@@ -122,13 +83,12 @@ def enum_fonts_w(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRIC, font_type: wi
 
 
 class EnumData:
-    def __init__(self, gdi, gdi_interop, sys_collection, fonts_filename, dc, already):
+    def __init__(self, gdi: GDI, gdi_interop: POINTER(IDWriteGdiInterop), msvcrt: MSVCRT, fonts_filename: Set[str], dc: wintypes.HDC):
         self.gdi = gdi
         self.gdi_interop = gdi_interop
-        self.dwrite_collection = sys_collection
+        self.msvcrt = msvcrt
         self.fonts_filename = fonts_filename
         self.dc = dc
-        self.already = already
 
 
 class WindowsFonts(SystemFonts):
@@ -140,20 +100,18 @@ class WindowsFonts(SystemFonts):
 
         gdi = GDI()
         dwrite = DirectWrite()
+        msvcrt = MSVCRT()
         fonts_filename = set()
 
         dwrite_factory = POINTER(IDWriteFactory)()
         dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
-
-        sys_collection = POINTER(IDWriteFontCollection)()
-        dwrite_factory.GetSystemFontCollection1(byref(sys_collection), False)
 
         dc = gdi.CreateCompatibleDC(None)
 
         gdi_interop = POINTER(IDWriteGdiInterop)()
         dwrite_factory.GetGdiInterop(byref(gdi_interop))
 
-        enum_data = EnumData(gdi, gdi_interop, sys_collection, fonts_filename, dc, False)
+        enum_data = EnumData(gdi, gdi_interop, msvcrt, fonts_filename, dc)
         object_enum_data = py_object(enum_data)
 
         # See this link to understand why I do a EnumFontsW and then a EnumFontFamiliesW

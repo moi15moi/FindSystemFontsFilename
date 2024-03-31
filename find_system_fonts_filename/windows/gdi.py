@@ -182,6 +182,7 @@ class GDI:
         self.DeleteObject.argtypes = [wintypes.HGDIOBJ]
         self.DeleteObject.errcheck = self.errcheck_is_result_0_or_null
 
+        self.LF_FACESIZE = 32
 
     @staticmethod
     def errcheck_is_result_0_or_null(result, func, args):
