@@ -13,6 +13,8 @@ class AndroidFonts(SystemFonts):
     def get_system_fonts_filename() -> Set[str]:
         if AndroidFonts._android is None:
              AndroidFonts._load_android_library()
+        
+        print("android test")
 
         fonts_filename = set()
 
