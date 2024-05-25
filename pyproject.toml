@@ -7,9 +7,6 @@ authors = [
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [
-    "comtypes; platform_system=='Windows'",
-]
 classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

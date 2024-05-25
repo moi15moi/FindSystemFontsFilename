@@ -15,7 +15,6 @@ class MSVCRT:
 
         self.TRUNCATE = c_size_t(-1).value
 
-
     @staticmethod
     def errcheck_wcsncpy_s(result, func, args):
         STRUNCATE = 80

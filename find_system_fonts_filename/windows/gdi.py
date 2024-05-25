@@ -1,51 +1,10 @@
-from ctypes import POINTER, c_ubyte, Structure, windll, WINFUNCTYPE, wintypes
-from enum import IntEnum
+from ctypes import c_ubyte, POINTER, Structure, windll, WINFUNCTYPE, wintypes
 
 __all__ = [
     "LOGFONTW",
-    "TEXTMETRIC",
+    "TEXTMETRICW",
     "GDI",
 ]
-
-class Pitch(IntEnum):
-    # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/22dbe377-aec4-4669-88e6-b8fdd9351d76
-    DEFAULT_PITCH           = 0
-    FIXED_PITCH             = 1
-    VARIABLE_PITCH          = 2
-
-
-class Family(IntEnum):
-    # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/9a632766-1f1c-4e2b-b1a4-f5b1a45f99ad
-    FF_DONTCARE = 0 << 4
-    FF_ROMAN = 1 << 4
-    FF_SWISS = 2 << 4
-    FF_MODERN = 3 << 4
-    FF_SCRIPT = 4 << 4
-    FF_DECORATIVE = 5 << 4
-
-
-class CharacterSet(IntEnum):
-    # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/0d0b32ac-a836-4bd2-a112-b6000a1b4fc9
-    ANSI_CHARSET = 0x00000000
-    DEFAULT_CHARSET = 0x00000001
-    SYMBOL_CHARSET = 0x00000002
-    MAC_CHARSET = 0x0000004D
-    SHIFTJIS_CHARSET = 0x00000080
-    HANGUL_CHARSET = 0x00000081
-    JOHAB_CHARSET = 0x00000082
-    GB2312_CHARSET = 0x00000086
-    CHINESEBIG5_CHARSET = 0x00000088
-    GREEK_CHARSET = 0x000000A1
-    TURKISH_CHARSET = 0x000000A2
-    VIETNAMESE_CHARSET = 0x000000A3
-    HEBREW_CHARSET = 0x000000B1
-    ARABIC_CHARSET = 0x000000B2
-    BALTIC_CHARSET = 0x000000BA
-    RUSSIAN_CHARSET = 0x000000CC
-    THAI_CHARSET = 0x000000DE
-    EASTEUROPE_CHARSET = 0x000000EE
-    OEM_CHARSET = 0x000000FF
-    FEOEM_CHARSET = 254 # From https://github.com/tongzx/nt5src/blob/daad8a087a4e75422ec96b7911f1df4669989611/Source/XPSP1/NT/windows/core/ntgdi/fondrv/tt/ttfd/fdfon.c#L6718
 
 
 class LOGFONTW(Structure):
@@ -67,24 +26,8 @@ class LOGFONTW(Structure):
         ("lfFaceName", wintypes.WCHAR * 32),
     ]
 
-    def __str__(self) -> str:
-        attributes = []
-        for field_name, _ in self._fields_:
-            value = getattr(self, field_name)
-            if field_name == "lfCharSet":
-                value = CharacterSet(value).name
-            elif field_name == "lfPitchAndFamily":
-                family = value & 0b11110000
-                pitch = value & 0b00001111
-                value = f"{Pitch(pitch).name}|{Family(family).name}"
-            elif field_name == "lfItalic":
-                value = bool(value)
 
-            attributes.append(f"{field_name}: {value}")
-        return "\n".join(attributes)
-
-
-class TEXTMETRIC(Structure):
+class TEXTMETRICW(Structure):
     # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-textmetricw
     _fields_ = [
         ('tmHeight', wintypes.LONG),
@@ -120,6 +63,28 @@ class ENUMLOGFONTEXW(Structure):
     ]
 
 
+class FontRealizationInfo(Structure):
+    # https://gitlab.winehq.org/wine/wine/-/blob/b210a204137dec8d2126ca909d762454fd47e963/dlls/dwrite/gdiinterop.c#L740-749
+    _fields_ = [
+        ("size", wintypes.DWORD),
+        ("flags", wintypes.DWORD),
+        ("cache_num", wintypes.DWORD),
+        ("instance_id", wintypes.DWORD),
+        ("file_count", wintypes.DWORD),
+        ("face_index", wintypes.WORD),
+        ("simulations", wintypes.WORD),
+    ]
+
+
+class FontFileInfo(Structure):
+    # https://gitlab.winehq.org/wine/wine/-/blob/b210a204137dec8d2126ca909d762454fd47e963/dlls/dwrite/gdiinterop.c#L751-756
+    _fields_ = [
+        ("writetime", wintypes.FILETIME),
+        ("size", wintypes.LARGE_INTEGER),
+        ("path", wintypes.WCHAR), # The size can varies
+    ]
+
+
 class GDI:
     def __init__(self) -> None:
         gdi = windll.gdi32
@@ -140,10 +105,15 @@ class GDI:
         self.ENUMFONTFAMEXPROC = WINFUNCTYPE(
             wintypes.INT,
             ENUMLOGFONTEXW,
-            TEXTMETRIC,
+            TEXTMETRICW,
             wintypes.DWORD,
             wintypes.LPARAM,
         )
+
+        # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-enumfontsw
+        self.EnumFontsW = gdi.EnumFontsW
+        self.EnumFontsW.restype = wintypes.INT
+        self.EnumFontsW.argtypes = [wintypes.HDC, wintypes.LPCWSTR, self.ENUMFONTFAMEXPROC, wintypes.LPARAM]
 
         # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-enumfontfamiliesw
         self.EnumFontFamiliesW = gdi.EnumFontFamiliesW
@@ -154,15 +124,7 @@ class GDI:
         self.EnumFontFamiliesExW = gdi.EnumFontFamiliesExW
         self.EnumFontFamiliesExW.restype = wintypes.INT
         self.EnumFontFamiliesExW.argtypes = [wintypes.HDC, POINTER(LOGFONTW), self.ENUMFONTFAMEXPROC, wintypes.LPARAM, wintypes.DWORD]
-
-        # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-enumfontsw
-        self.EnumFontsW = gdi.EnumFontsW
-        self.EnumFontsW.restype = wintypes.INT
-        self.EnumFontsW.argtypes = [wintypes.HDC, wintypes.LPCWSTR, self.ENUMFONTFAMEXPROC, wintypes.LPARAM]
-
-        self.RASTER_FONTTYPE = 0x0001
-        self.DEVICE_FONTTYPE = 0x0002
-        self.TRUETYPE_FONTTYPE = 0x0004
+        # TODO to remove
 
         # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontindirectw
         self.CreateFontIndirectW = gdi.CreateFontIndirectW
@@ -174,7 +136,7 @@ class GDI:
         self.SelectObject = gdi.SelectObject
         self.SelectObject.restype = wintypes.HGDIOBJ
         self.SelectObject.argtypes = [wintypes.HDC, wintypes.HGDIOBJ]
-        self.SelectObject.errcheck = self.is_SelectObject_failed
+        self.SelectObject.errcheck = self.has_SelectObject_failed
 
         # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-deleteobject
         self.DeleteObject = gdi.DeleteObject
@@ -182,7 +144,23 @@ class GDI:
         self.DeleteObject.argtypes = [wintypes.HGDIOBJ]
         self.DeleteObject.errcheck = self.errcheck_is_result_0_or_null
 
+        # Not documented by Microsoft
+        # From https://gitlab.winehq.org/wine/wine/-/blob/b210a204137dec8d2126ca909d762454fd47e963/dlls/dwrite/gdiinterop.c#L759
+        self.GetFontRealizationInfo = gdi.GetFontRealizationInfo
+        self.GetFontRealizationInfo.restype = wintypes.BOOL
+        self.GetFontRealizationInfo.argtypes = [wintypes.HDC, POINTER(FontRealizationInfo)]
+        self.GetFontRealizationInfo.errcheck = self.errcheck_is_result_0_or_null
+
+        # Not documented by Microsoft
+        # From https://gitlab.winehq.org/wine/wine/-/blob/b210a204137dec8d2126ca909d762454fd47e963/dlls/dwrite/gdiinterop.c#L760
+        self.GetFontFileInfo = gdi.GetFontFileInfo
+        self.GetFontFileInfo.restype = wintypes.BOOL
+        self.GetFontFileInfo.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, POINTER(wintypes.DWORD)]
+
         self.LF_FACESIZE = 32
+        self.RASTER_FONTTYPE = 0x0001
+        self.DEVICE_FONTTYPE = 0x0002
+        self.TRUETYPE_FONTTYPE = 0x0004
 
     @staticmethod
     def errcheck_is_result_0_or_null(result, func, args):
@@ -191,7 +169,7 @@ class GDI:
         return result
 
     @staticmethod
-    def is_SelectObject_failed(result, func, args):
+    def has_SelectObject_failed(result, func, args):
         HGDI_ERROR = wintypes.HGDIOBJ(0xFFFFFFFF)
         if result == None or result == HGDI_ERROR:
             raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")

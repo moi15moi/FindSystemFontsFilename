@@ -2,7 +2,7 @@
 This tool allows you to get the font filename on your system. It will collect TrueType (.ttf), OpenType (.otf), TrueType Collection (.ttc) and OpenType Collection (.otc) font format.
 
 It uses some APIs to find the font filename:
-- Windows: [DirectWrite API](https://learn.microsoft.com/en-us/windows/win32/directwrite/direct-write-portal)
+- Windows: [GDI API](https://learn.microsoft.com/en-us/windows/win32/gdi/windows-gdi)
 - macOS: [Core Text API](https://developer.apple.com/documentation/coretext)
 - Linux: [Fontconfig API](https://www.freedesktop.org/wiki/Software/fontconfig/)
 - Android: [NDK Font API](https://developer.android.com/ndk/reference/group/font)
