@@ -124,7 +124,6 @@ class GDI:
         self.EnumFontFamiliesExW = gdi.EnumFontFamiliesExW
         self.EnumFontFamiliesExW.restype = wintypes.INT
         self.EnumFontFamiliesExW.argtypes = [wintypes.HDC, POINTER(LOGFONTW), self.ENUMFONTFAMEXPROC, wintypes.LPARAM, wintypes.DWORD]
-        # TODO to remove
 
         # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontindirectw
         self.CreateFontIndirectW = gdi.CreateFontIndirectW

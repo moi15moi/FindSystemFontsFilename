@@ -16,6 +16,8 @@ def enum_font_families_w(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRICW, font
     # It seems that font_type can be 0. In those case, the font format is .fon
     # We also discard RASTER_FONTTYPE which are bitmap font
     if not (font_type & enum_data.gdi.RASTER_FONTTYPE) and font_type:
+        # Replace the lfFaceName with the elfFullName.
+        # See why here: https://github.com/libass/libass/issues/744
         lfFaceName = create_unicode_buffer(enum_data.gdi.LF_FACESIZE)
         enum_data.msvcrt.wcsncpy_s(lfFaceName, enum_data.gdi.LF_FACESIZE, logfont.elfFullName, enum_data.msvcrt.TRUNCATE)
         logfont.elfLogFont.lfFaceName = lfFaceName.value
@@ -81,6 +83,7 @@ class WindowsFonts(SystemFonts):
         object_enum_data = py_object(enum_data)
 
         # See this link to understand why we do call EnumFontsW and then a EnumFontFamiliesW
+        # and not directly EnumFontFamiliesExW.
         # https://stackoverflow.com/a/62405274/15835974
         gdi.EnumFontsW(dc, None, gdi.ENUMFONTFAMEXPROC(enum_fonts_w), addressof(object_enum_data))
         gdi.DeleteDC(dc)
