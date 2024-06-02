@@ -40,6 +40,7 @@ def test_install_uninstall_font_windows():
     assert any(os.path.samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename, True)
+    fonts_filename = get_system_fonts_filename()
     assert not any(os.path.samefile(filename, f) for f in fonts_filename)
 
     install_font(filename, False)
@@ -47,6 +48,7 @@ def test_install_uninstall_font_windows():
     assert any(os.path.samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename, False)
+    fonts_filename = get_system_fonts_filename()
     assert not any(os.path.samefile(filename, f) for f in fonts_filename)
 
 @pytest.mark.skipif(system() == 'Windows', reason="Test runs on any platform except Windows")
@@ -63,4 +65,5 @@ def test_install_uninstall_font_not_windows():
     assert any(os.path.samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename)
+    fonts_filename = get_system_fonts_filename()
     assert not any(os.path.samefile(filename, f) for f in fonts_filename)
