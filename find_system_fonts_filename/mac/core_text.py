@@ -1,10 +1,11 @@
 from .types import CFIndex
-from ctypes import c_void_p, cdll, util
+from ctypes import c_bool, c_uint32, c_void_p, cdll, util
 from enum import IntEnum
 
 __all__ = [
     "CoreText",
-    "CTFontFormat"
+    "CTFontFormat",
+    "CTFontManagerScope"
 ]
 
 
@@ -16,6 +17,15 @@ class CTFontFormat(IntEnum):
     kCTFontFormatTrueType = 3
     kCTFontFormatPostScript = 4
     kCTFontFormatBitmap = 5
+
+
+class CTFontManagerScope(IntEnum):
+    # https://developer.apple.com/documentation/coretext/ctfontmanagerscope?language=objc
+    kCTFontManagerScopeNone = 0
+    kCTFontManagerScopeProcess = 1
+    kCTFontManagerScopePersistent = 2
+    kCTFontManagerScopeSession = 3
+    kCTFontManagerScopeUser = 2
 
 
 class CoreText():
@@ -49,3 +59,13 @@ class CoreText():
         self.CFURLCopyFileSystemPath = core_text.CFURLCopyFileSystemPath
         self.CFURLCopyFileSystemPath.restype = c_void_p
         self.CFURLCopyFileSystemPath.argtypes = [c_void_p, CFIndex]
+
+        # https://developer.apple.com/documentation/coretext/1499468-ctfontmanagerregisterfontsforurl?language=objc
+        self.CTFontManagerRegisterFontsForURL = core_text.CTFontManagerRegisterFontsForURL
+        self.CTFontManagerRegisterFontsForURL.restype = c_bool
+        self.CTFontManagerRegisterFontsForURL.argtypes = [c_void_p,  c_uint32, c_void_p]
+
+        # https://developer.apple.com/documentation/coretext/1499496-ctfontmanagerunregisterfontsforu?language=objc
+        self.CTFontManagerUnregisterFontsForURL = core_text.CTFontManagerUnregisterFontsForURL
+        self.CTFontManagerUnregisterFontsForURL.restype = c_bool
+        self.CTFontManagerUnregisterFontsForURL.argtypes = [c_void_p,  c_uint32, c_void_p]

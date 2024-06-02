@@ -100,3 +100,13 @@ class CoreFoundation():
         self.CFNumberGetValue = core_foundation.CFNumberGetValue
         self.CFNumberGetValue.restype = c_bool
         self.CFNumberGetValue.argtypes = [CFNumberRef, CFIndex, c_void_p]
+
+        # https://developer.apple.com/documentation/corefoundation/1542942-cfstringcreatewithcstring?language=objc
+        self.CFStringCreateWithCString = core_foundation.CFStringCreateWithCString
+        self.CFStringCreateWithCString.restype = c_void_p
+        self.CFStringCreateWithCString.argtypes = [c_void_p, c_char_p, CFStringEncoding]
+
+        # https://developer.apple.com/documentation/corefoundation/1543250-cfurlcreatewithfilesystempath?language=objc
+        self.CFURLCreateWithFileSystemPath = core_foundation.CFURLCreateWithFileSystemPath
+        self.CFURLCreateWithFileSystemPath.restype = c_void_p
+        self.CFURLCreateWithFileSystemPath.argtypes = [c_void_p, c_void_p, CFIndex, c_bool]
