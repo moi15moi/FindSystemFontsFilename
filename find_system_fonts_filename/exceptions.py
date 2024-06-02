@@ -1,3 +1,12 @@
+__all__ = [
+    "FindSystemFontsFilenameException",
+    "OSNotSupported",
+    "FontConfigNotFound",
+    "AndroidLibraryNotFound",
+    "NotSupportedFontFile"
+]
+
+
 class FindSystemFontsFilenameException(Exception):
     "Basic exception for this package"
     pass
@@ -15,4 +24,8 @@ class FontConfigNotFound(FindSystemFontsFilenameException):
 
 class AndroidLibraryNotFound(FindSystemFontsFilenameException):
     "Raised when the android library haven't been found"
+    pass
+
+class NotSupportedFontFile(FindSystemFontsFilenameException):
+    "Raised when the user try to install a font, but it isn't supported by the OS"
     pass
