@@ -29,7 +29,7 @@ def get_system_fonts_class() -> SystemFonts:
             return LinuxFonts
 
     elif system_name == "Darwin":
-        from .mac_fonts import MacFonts
+        from .mac.mac_fonts import MacFonts
         return MacFonts
 
     else:
