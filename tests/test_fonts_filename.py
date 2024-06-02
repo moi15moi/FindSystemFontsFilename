@@ -48,3 +48,19 @@ def test_install_uninstall_font_windows():
 
     uninstall_font(filename, False)
     assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+
+@pytest.mark.skipif(system() == 'Windows', reason="Test runs on any platform except Windows")
+def test_install_uninstall_font_not_windows():
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    filename = Path(os.path.join(dir_path, "SuperFunky-lgmWw.ttf"))
+
+    fonts_filename = get_system_fonts_filename()
+    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    install_font(filename)
+    fonts_filename = get_system_fonts_filename()
+    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    uninstall_font(filename)
+    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
