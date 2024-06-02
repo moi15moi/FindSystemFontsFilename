@@ -277,6 +277,11 @@ class WindowsFonts(SystemFonts):
         return registry_font_name
 
     def install_font(font_filename: Path, add_font_to_registry: bool) -> None:
+        windows_version = getwindowsversion()
+
+        if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
+            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
+
         gdi = GDI32()
         user32 = User32()
 
@@ -298,6 +303,11 @@ class WindowsFonts(SystemFonts):
         user32.SendNotifyMessageW(user32.HWND_BROADCAST, user32.WM_FONTCHANGE, 0, 0)
 
     def uninstall_font(font_filename: Path, added_font_to_registry: bool) -> None:
+        windows_version = getwindowsversion()
+
+        if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
+            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
+
         gdi = GDI32()
         user32 = User32()
 

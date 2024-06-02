@@ -1,5 +1,9 @@
+import os
 from pathlib import Path
-from find_system_fonts_filename import get_system_fonts_filename
+from platform import system
+
+import pytest
+from find_system_fonts_filename import get_system_fonts_filename, install_font, uninstall_font
 from os.path import isfile
 
 
@@ -21,3 +25,26 @@ def test_get_system_fonts_filename():
 
             signature = font_file.read(4)
             assert signature in [truetype_signature, opentype_signature, collection_signature]
+
+@pytest.mark.skipif(system() != 'Windows', reason="Test runs only on Windows")
+def test_install_uninstall_font_windows():
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    filename = Path(os.path.join(dir_path, "SuperFunky-lgmWw.ttf"))
+
+    fonts_filename = get_system_fonts_filename()
+    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    install_font(filename, True)
+    fonts_filename = get_system_fonts_filename()
+    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    uninstall_font(filename, True)
+    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    install_font(filename, False)
+    fonts_filename = get_system_fonts_filename()
+    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+
+    uninstall_font(filename, False)
+    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
