@@ -1,10 +1,9 @@
-import os
+import pytest
+from filecmp import cmp
+from os.path import dirname, isfile, join, realpath, samefile
 from pathlib import Path
 from platform import system
-
-import pytest
 from find_system_fonts_filename import get_system_fonts_filename, install_font, uninstall_font
-from os.path import isfile
 
 
 def test_get_system_fonts_filename():
@@ -29,41 +28,61 @@ def test_get_system_fonts_filename():
 @pytest.mark.skipif(system() != 'Windows', reason="Test runs only on Windows")
 def test_install_uninstall_font_windows():
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    filename = Path(os.path.join(dir_path, "SuperFunky-lgmWw.ttf"))
+    dir_path = dirname(realpath(__file__))
+    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
 
     fonts_filename = get_system_fonts_filename()
-    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert not any(samefile(filename, f) for f in fonts_filename)
 
     install_font(filename, True)
     fonts_filename = get_system_fonts_filename()
-    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert any(samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename, True)
     fonts_filename = get_system_fonts_filename()
-    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert not any(samefile(filename, f) for f in fonts_filename)
 
     install_font(filename, False)
     fonts_filename = get_system_fonts_filename()
-    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert any(samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename, False)
     fonts_filename = get_system_fonts_filename()
-    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert not any(samefile(filename, f) for f in fonts_filename)
 
-@pytest.mark.skipif(system() == 'Windows', reason="Test runs on any platform except Windows")
-def test_install_uninstall_font_not_windows():
+@pytest.mark.skipif(system() != 'Darwin', reason="Test runs only on Darwin")
+def test_install_uninstall_font_darwin():
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    filename = Path(os.path.join(dir_path, "SuperFunky-lgmWw.ttf"))
+    dir_path = dirname(realpath(__file__))
+    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
 
     fonts_filename = get_system_fonts_filename()
-    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert not any(samefile(filename, f) for f in fonts_filename)
 
     install_font(filename)
     fonts_filename = get_system_fonts_filename()
-    assert any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert any(samefile(filename, f) for f in fonts_filename)
 
     uninstall_font(filename)
     fonts_filename = get_system_fonts_filename()
-    assert not any(os.path.samefile(filename, f) for f in fonts_filename)
+    assert not any(samefile(filename, f) for f in fonts_filename)
+
+@pytest.mark.skipif(system() != 'Linux', reason="Test runs only on Linux")
+def test_install_uninstall_font_linux():
+
+    # On Linux, the installed font is a copy of the
+    # requested font, so we need to compare the actual file,
+    # not the file path.
+    dir_path = dirname(realpath(__file__))
+    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+
+    fonts_filename = get_system_fonts_filename()
+    assert not any(cmp(filename, f, False) for f in fonts_filename)
+
+    install_font(filename)
+    fonts_filename = get_system_fonts_filename()
+    assert any(cmp(filename, f, False) for f in fonts_filename)
+
+    uninstall_font(filename)
+    fonts_filename = get_system_fonts_filename()
+    assert not any(cmp(filename, f, False) for f in fonts_filename)

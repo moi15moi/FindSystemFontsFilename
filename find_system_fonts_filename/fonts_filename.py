@@ -25,7 +25,7 @@ def get_system_fonts_class() -> SystemFonts:
             from .android_fonts import AndroidFonts
             return AndroidFonts
         else:
-            from .linux.linux_fonts import LinuxFonts
+            from .linux import LinuxFonts
             return LinuxFonts
 
     elif system_name == "Darwin":
