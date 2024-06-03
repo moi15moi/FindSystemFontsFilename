@@ -55,7 +55,6 @@ class FontConfig():
         self.FC_FONTFORMAT = FontConfig.string_to_cstring("fontformat")
         self.FC_FILE = FontConfig.string_to_cstring("file")
 
-
         # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcinitloadconfigandfonts.html
         self.FcInitLoadConfigAndFonts = font_config.FcInitLoadConfigAndFonts
         self.FcInitLoadConfigAndFonts.restype = c_void_p
@@ -100,7 +99,47 @@ class FontConfig():
         self.FcFontSetDestroy = font_config.FcFontSetDestroy
         self.FcFontSetDestroy.restype = None
         self.FcFontSetDestroy.argtypes = [c_void_p]
-    
+
+        # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcconfiggetfontdirs.html
+        self.FcConfigGetFontDirs = font_config.FcConfigGetFontDirs
+        self.FcConfigGetFontDirs.restype = c_void_p
+        self.FcConfigGetFontDirs.argtypes = [c_void_p]
+
+        # Introduced in 2.11.0
+        if hasattr(font_config, "FcStrListFirst"):
+            # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcstrlistfirst.html
+            self.FcStrListFirst = font_config.FcStrListFirst
+            self.FcStrListFirst.restype = None
+            self.FcStrListFirst.argtypes = [c_void_p]
+
+        # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcstrlistnext.html
+        self.FcStrListNext = font_config.FcStrListNext
+        self.FcStrListNext.restype = c_char_p
+        self.FcStrListNext.argtypes = [c_void_p]
+
+        # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcstrlistdone.html
+        self.FcStrListDone = font_config.FcStrListDone
+        self.FcStrListDone.restype = None
+        self.FcStrListDone.argtypes = [c_void_p]
+
+        # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcconfiggetcurrent.html
+        self.FcConfigGetCurrent = font_config.FcConfigGetCurrent
+        self.FcConfigGetCurrent.restype = c_void_p
+        self.FcConfigGetCurrent.argtypes = []
+
+        # Introduced in 2.11.1
+        if hasattr(font_config, "FcDirCacheRescan"):
+            # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcdircacherescan.html
+            self.FcDirCacheRescan = font_config.FcDirCacheRescan
+            self.FcDirCacheRescan.restype = c_void_p
+            self.FcDirCacheRescan.argtypes = [c_char_p, c_void_p]
+
+        # https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcgetversion.html
+        self.FcGetVersion = font_config.FcGetVersion
+        self.FcGetVersion.restype = c_int
+        self.FcGetVersion.argtypes = []
+
+
     @staticmethod
     def string_to_cstring(string: str) -> c_char_p:
         return c_char_p(bytes(ord(c) for c in string))
