@@ -1,3 +1,4 @@
+from .gdi32 import LOGFONTW
 from comtypes import GUID, HRESULT, IUnknown, STDMETHOD
 from ctypes import POINTER, windll, wintypes
 from enum import IntEnum, IntFlag
@@ -26,6 +27,7 @@ __all__ = [
     "IDWriteFontList",
     "IDWriteFontSet",
     "IDWriteFontSetBuilder",
+    "IDWriteGdiInterop",
     "IDWriteLocalFontFileLoader",
     "IDWriteLocalizedStrings"
 ]
@@ -243,6 +245,18 @@ class IDWriteFontCollection(IUnknown):
     ]
 
 
+class IDWriteGdiInterop(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritegdiinterop
+    _iid_ = GUID("{1edd9491-9853-4299-898f-6432983b6f3a}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "CreateFontFromLOGFONT1", [POINTER(LOGFONTW), POINTER(POINTER(IDWriteFont))]),
+        STDMETHOD(None, "ConvertFontToLOGFONT"),  # Need to be implemented
+        STDMETHOD(None, "ConvertFontFaceToLOGFONT"),  # Need to be implemented
+        STDMETHOD(HRESULT, "CreateFontFaceFromHdc", [wintypes.HDC, POINTER(POINTER(IDWriteFontFace))]),
+        STDMETHOD(None, "CreateBitmapRenderTarget"),  # Need to be implemented
+    ]
+
+
 class IDWriteFontFileEnumerator(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontfileenumerator
     _iid_ = GUID("{72755049-5ff7-435d-8348-4be97cfa6c7c}")
@@ -275,7 +289,7 @@ class IDWriteFactory(IUnknown):
         STDMETHOD(HRESULT, "UnregisterFontFileLoader", [POINTER(IDWriteFontFileLoader)]),
         STDMETHOD(None, "CreateTextFormat"),  # Need to be implemented
         STDMETHOD(None, "CreateTypography"),  # Need to be implemented
-        STDMETHOD(None, "GetGdiInterop"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetGdiInterop", [POINTER(POINTER(IDWriteGdiInterop))]),
         STDMETHOD(None, "CreateTextLayout"),  # Need to be implemented
         STDMETHOD(None, "CreateGdiCompatibleTextLayout"),  # Need to be implemented
         STDMETHOD(None, "CreateEllipsisTrimmingSign"),  # Need to be implemented
