@@ -27,7 +27,7 @@ from ctypes import addressof, byref, cast, create_unicode_buffer, POINTER, py_ob
 from pathlib import Path
 from sys import getwindowsversion
 from typing import List, Set
-from ..exceptions import NotSupportedFontFile, OSNotSupported
+from ..exceptions import NotSupportedFontFile, OSNotSupported, SystemApiError
 from ..system_fonts import SystemFonts
 
 __all__ = ["WindowsFonts"]
@@ -206,7 +206,7 @@ class WindowsFonts(SystemFonts):
             )
 
             if not exists:
-                raise ValueError("Could not fetch the font name")
+                raise SystemApiError("Could not fetch the font name")
 
             # Based on https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename#remarks
             locale_name = create_unicode_buffer(kernel32.LOCALE_NAME_MAX_LENGTH)
@@ -289,7 +289,7 @@ class WindowsFonts(SystemFonts):
         while True:
             try:
                 gdi.RemoveFontResourceW(str(font_filename))
-            except OSError:
+            except SystemApiError:
                 break
 
         user32.SendNotifyMessageW(user32.HWND_BROADCAST, user32.WM_FONTCHANGE, 0, 0)
