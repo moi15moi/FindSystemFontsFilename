@@ -242,13 +242,17 @@ class WindowsFonts(SystemFonts):
         if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
             raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
 
+        # Font in the registry have been added in 10.0.17083.
+        # Source: https://superuser.com/a/1658749/1729132
+        is_build_17083_or_greater = WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 17083)
+
         gdi = GDI32()
         user32 = User32()
 
         font_filename_buffer = create_unicode_buffer(str(font_filename))
 
         gdi.AddFontResourceW(font_filename_buffer)
-        if add_font_to_registry:
+        if add_font_to_registry and is_build_17083_or_greater:
             advapi32 = Advapi32()
             hkey = wintypes.HKEY()
             registry_font_name = WindowsFonts.get_registry_font_name(font_filename)
@@ -266,10 +270,14 @@ class WindowsFonts(SystemFonts):
         if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
             raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
 
+        # Font in the registry have been added in 10.0.17083.
+        # Source: https://superuser.com/a/1658749/1729132
+        is_build_17083_or_greater = WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 17083)
+
         gdi = GDI32()
         user32 = User32()
 
-        if added_font_to_registry:
+        if added_font_to_registry and is_build_17083_or_greater:
             advapi32 = Advapi32()
             hkey = wintypes.HKEY()
             registry_font_name = WindowsFonts.get_registry_font_name(font_filename)

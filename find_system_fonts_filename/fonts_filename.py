@@ -45,6 +45,8 @@ def install_font(font_filename: Path, add_font_to_registry: bool = False) -> Non
     Args:
         add_font_to_registry: It will add the font in the Windows Registry.
             This argument is Windows Only.
+            It adds the font to the Windows Registry only if the Windows version is 10.0.17083 (also known as version 1803) or later.
+            Prior to this version, Windows did not support font registration in the registry.
     """
     if not font_filename.is_file():
         raise FileNotFoundError(f"The file \"{font_filename}\" doesn't exist")
@@ -59,6 +61,8 @@ def uninstall_font(font_filename: Path, remove_font_in_registry: bool = False) -
         remove_font_in_registry: It will also remove the Windows Registry entry that has been added
             when install_font with add_font_to_registry set to True has been called.
             This argument is Windows Only.
+            It adds the font to the Windows Registry only if the Windows version is 10.0.17083 (also known as version 1803) or later.
+            Prior to this version, Windows did not support font registration in the registry.
     """
     if not font_filename.is_file():
         raise FileNotFoundError(f"The file \"{font_filename}\" doesn't exist")
