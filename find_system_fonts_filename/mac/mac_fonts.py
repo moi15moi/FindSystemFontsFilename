@@ -4,7 +4,7 @@ from .version_helpers import MacVersionHelpers
 from ctypes import byref, c_uint32, c_void_p, create_string_buffer
 from pathlib import Path
 from typing import Set
-from ..exceptions import FindSystemFontsFilenameException, OSNotSupported
+from ..exceptions import FindSystemFontsFilenameException, OSNotSupported, SystemApiError
 from ..system_fonts import SystemFonts
 
 __all__ = ["MacFonts"]
@@ -115,7 +115,7 @@ class MacFonts(SystemFonts):
         if result:
             return str(buffer.value, "utf-8")
         else:
-            raise Exception("An unexpected error has occurred while decoding the CFString.")
+            raise SystemApiError("An unexpected error has occurred while decoding the CFString.")
 
 
     @staticmethod
@@ -134,4 +134,4 @@ class MacFonts(SystemFonts):
         if success:
             return value.value
         else:
-            raise Exception("The CFNumber doesn't seems to be an kCFNumberIntType.")
+            raise SystemApiError("The CFNumber doesn't seems to be an kCFNumberIntType.")

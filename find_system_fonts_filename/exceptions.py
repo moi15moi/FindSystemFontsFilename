@@ -3,7 +3,8 @@ __all__ = [
     "OSNotSupported",
     "FontConfigNotFound",
     "AndroidLibraryNotFound",
-    "NotSupportedFontFile"
+    "NotSupportedFontFile",
+    "SystemApiError"
 ]
 
 
@@ -28,4 +29,8 @@ class AndroidLibraryNotFound(FindSystemFontsFilenameException):
 
 class NotSupportedFontFile(FindSystemFontsFilenameException):
     "Raised when the user try to install a font, but it isn't supported by the OS"
+    pass
+
+class SystemApiError(FindSystemFontsFilenameException):
+    "Raised when the system API returned an unexpected error."
     pass

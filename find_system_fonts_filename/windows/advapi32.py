@@ -1,5 +1,6 @@
 from ctypes import windll, wintypes
 from enum import Enum
+from ..exceptions import SystemApiError
 
 __all__ = [
     "Advapi32",
@@ -58,7 +59,7 @@ class Advapi32():
     def errcheck_lstatus_fails(result, func, args):
         ERROR_SUCCESS = 0
         if result != ERROR_SUCCESS:
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result
 
     @staticmethod
@@ -66,5 +67,5 @@ class Advapi32():
         ERROR_SUCCESS = 0
         ERROR_FILE_NOT_FOUND = 2
         if result not in (ERROR_SUCCESS, ERROR_FILE_NOT_FOUND):
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result

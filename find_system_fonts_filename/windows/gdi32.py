@@ -1,4 +1,5 @@
 from ctypes import POINTER, WINFUNCTYPE, c_ubyte, Structure, windll, wintypes
+from ..exceptions import SystemApiError
 
 __all__ = ["GDI32"]
 
@@ -138,7 +139,7 @@ class GDI32:
     @staticmethod
     def errcheck_is_result_0_or_null(result, func, args):
         if not result:
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result
 
 
@@ -146,5 +147,5 @@ class GDI32:
     def has_SelectObject_failed(result, func, args):
         HGDI_ERROR = wintypes.HGDIOBJ(0xFFFFFFFF)
         if result == None or result == HGDI_ERROR:
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result

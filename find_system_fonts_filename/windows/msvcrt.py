@@ -1,4 +1,5 @@
 from ctypes import c_size_t, windll, wintypes
+from ..exceptions import SystemApiError
 
 __all__ = ["MSVCRT"]
 
@@ -19,5 +20,5 @@ class MSVCRT:
     def errcheck_wcsncpy_s(result, func, args):
         STRUNCATE = 80
         if result not in (0, STRUNCATE):
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result

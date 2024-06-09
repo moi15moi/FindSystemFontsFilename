@@ -1,4 +1,5 @@
 from ctypes import windll, wintypes
+from ..exceptions import SystemApiError
 
 __all__ = ["User32"]
 
@@ -19,5 +20,5 @@ class User32():
     @staticmethod
     def errcheck_is_result_0_or_null(result, func, args):
         if not result:
-            raise OSError(f"{func.__name__} fails. The result is {result} which is invalid")
+            raise SystemApiError(f"{func.__name__} fails. The result is {result} which is invalid")
         return result
