@@ -67,7 +67,7 @@ def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
             buffer = create_unicode_buffer(path_len.value + 1)
             local_loader.GetFilePathFromKey(font_file_reference_key, font_file_reference_key_size, buffer, len(buffer))
 
-            fonts_filename.add(buffer.value)    
+            fonts_filename.add(buffer.value)
 
     return fonts_filename
 
@@ -146,7 +146,7 @@ class WindowsFonts(SystemFonts):
         # and not directly EnumFontFamiliesExW.
         # https://stackoverflow.com/a/62405274/15835974
         enum_data.gdi.EnumFontFamiliesW(enum_data.dc, None, enum_data.gdi.ENUMFONTFAMEXPROC(enum_fonts_1), addressof(object_enum_data))
-    
+
         gdi.DeleteDC(dc)
 
         return fonts_filename
@@ -244,9 +244,6 @@ class WindowsFonts(SystemFonts):
 
         gdi = GDI32()
         user32 = User32()
-
-        if not font_filename.is_file():
-            raise FileNotFoundError(f"The file \"{font_filename}\" doesn't exist")
 
         font_filename_buffer = create_unicode_buffer(str(font_filename))
 
