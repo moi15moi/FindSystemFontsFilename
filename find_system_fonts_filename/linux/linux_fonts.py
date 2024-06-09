@@ -11,7 +11,6 @@ __all__ = ["LinuxFonts"]
 
 
 class LinuxFonts(SystemFonts):
-    _font_config = None
     VALID_FONT_FORMATS = [
         FC_FONT_FORMAT.FT_FONT_FORMAT_TRUETYPE,
         FC_FONT_FORMAT.FT_FONT_FORMAT_CFF,
