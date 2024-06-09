@@ -1,9 +1,10 @@
 import pytest
+import sys
 from filecmp import cmp
 from os.path import dirname, isfile, join, realpath, samefile
 from pathlib import Path
 from platform import system
-from find_system_fonts_filename import get_system_fonts_filename, install_font, uninstall_font
+from find_system_fonts_filename import get_system_fonts_filename, install_font, uninstall_font, OSNotSupported
 
 
 def test_get_system_fonts_filename():
@@ -67,7 +68,7 @@ def test_install_uninstall_font_darwin():
     fonts_filename = get_system_fonts_filename()
     assert not any(samefile(filename, f) for f in fonts_filename)
 
-@pytest.mark.skipif(system() != 'Linux', reason="Test runs only on Linux")
+@pytest.mark.skipif(not (system() == 'Linux' and not hasattr(sys, "getandroidapilevel")), reason="Test runs only on Linux")
 def test_install_uninstall_font_linux():
 
     # On Linux, the installed font is a copy of the
@@ -86,3 +87,16 @@ def test_install_uninstall_font_linux():
     uninstall_font(filename)
     fonts_filename = get_system_fonts_filename()
     assert not any(cmp(filename, f, False) for f in fonts_filename)
+
+@pytest.mark.skipif(not (system() == 'Linux' and hasattr(sys, "getandroidapilevel")), reason="Test runs only on Android")
+def test_install_uninstall_font_android():
+    dir_path = dirname(realpath(__file__))
+    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+
+    with pytest.raises(OSNotSupported) as exc_info:
+        install_font(filename)
+    assert str(exc_info.value) == "You cannot install font on android."
+
+    with pytest.raises(OSNotSupported) as exc_info:
+        uninstall_font(filename)
+    assert str(exc_info.value) == "You cannot uninstall font on android."

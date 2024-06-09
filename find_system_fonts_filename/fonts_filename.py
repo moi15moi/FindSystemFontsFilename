@@ -1,6 +1,6 @@
+import sys
 from pathlib import Path
 from platform import system
-from os import environ
 from typing import Set
 from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
@@ -20,9 +20,8 @@ def get_system_fonts_class() -> SystemFonts:
         return WindowsFonts
 
     elif system_name == "Linux":
-        # ANDROID_ROOT or ANDROID_BOOTLOGO - https://stackoverflow.com/a/66174754/15835974
-        if any(t in environ.keys() for t in ("ANDROID_ROOT", "ANDROID_BOOTLOGO")):
-            from .android_fonts import AndroidFonts
+        if hasattr(sys, "getandroidapilevel"):
+            from .android import AndroidFonts
             return AndroidFonts
         else:
             from .linux import LinuxFonts
