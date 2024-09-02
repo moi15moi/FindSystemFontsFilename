@@ -83,11 +83,12 @@ jobs:
 
     - name: Install Python requirements
       run: |
-        pip3 install --upgrade --upgrade-strategy eager .
+        which pip
+        pip install --upgrade --upgrade-strategy eager .
 
     - name: Install pytest
       run: |
-        pip3 install pytest
+        pip install pytest
 
     - name: Run tests
       run: |
