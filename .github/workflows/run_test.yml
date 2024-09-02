@@ -77,8 +77,8 @@ jobs:
       with:
         msystem: UCRT64
         install: >-
-          python
-          python-pip
+          mingw-w64-python
+          mingw-w64-python-pip
 
     - name: Checkout code
       uses: actions/checkout@v4
