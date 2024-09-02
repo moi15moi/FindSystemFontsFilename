@@ -92,7 +92,9 @@ jobs:
 
     - name: Install Python requirements
       run: |
-        pip3 install --upgrade --upgrade-strategy eager .
+        which pip3
+        which pip
+        pip install --upgrade --upgrade-strategy eager .
 
     - name: Install pytest
       run: |
@@ -100,4 +102,5 @@ jobs:
 
     - name: Run tests
       run: |
+        which pytest
         pytest
