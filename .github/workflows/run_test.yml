@@ -85,6 +85,9 @@ jobs:
     - name: Install Python requirements
       run: |
         which pip
+        which pip3
+        pwd
+        echo $GITHUB_WORKSPACE
         pip install --upgrade --upgrade-strategy eager .
 
     - name: Install pytest
