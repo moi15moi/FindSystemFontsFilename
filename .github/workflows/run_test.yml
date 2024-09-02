@@ -85,7 +85,7 @@ jobs:
         msystem: ${{matrix.sys}}
         install: >-
           mingw-w64-${{matrix.env}}-python
-          python-pip
+          mingw-w64-${{matrix.env}}-python-pip
 
     - name: Checkout code
       uses: actions/checkout@v4
