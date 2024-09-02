@@ -95,8 +95,8 @@ jobs:
         which python
         which pip3
         which pip
-        python -m venv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
-        pip install --upgrade --upgrade-strategy eager .
-        pip install pytest
-        pytest
+        pip3 install --upgrade --upgrade-strategy eager .
+        pip3 install pytest
+        python3 -m pytest
