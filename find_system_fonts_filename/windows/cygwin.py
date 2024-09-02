@@ -7,6 +7,7 @@ __all__ = ["Cygwin"]
 
 class Cygwin():
     def __init__(self) -> None:
+        raise Exception("test")
         # Detect when it is msys: https://www.msys2.org/docs/python/
         cygwin = cdll.LoadLibrary("msys-2.0.dll" if get_platform().startswith("mingw") else "cygwin1.dll")
     
