@@ -74,7 +74,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - { sys: msys, env: x86_64 }
+          - { sys: msys, env: i686 }
           - { sys: mingw64, env: x86_64 }
           - { sys: ucrt64,  env: ucrt-x86_64 }
 
