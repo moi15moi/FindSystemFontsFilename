@@ -99,8 +99,4 @@ jobs:
         source .venv/bin/activate
         pip install --upgrade --upgrade-strategy eager .
         pip install pytest
-
-    - name: Run tests
-      run: |
-        which pytest
         pytest
