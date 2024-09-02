@@ -101,3 +101,20 @@ def test_install_uninstall_font_android():
     with pytest.raises(OSNotSupported) as exc_info:
         uninstall_font(filename)
     assert str(exc_info.value) == "You cannot uninstall font on android."
+
+@pytest.mark.skipif(not (system() == "Windows" or platform == "cygwin"), reason="Test runs only on Windows")
+def test_install_font_windows_fullname_truncated():
+    # Test special case where the fullname is truncated
+    dir_path = dirname(realpath(__file__))
+    filename = Path(join(dir_path, "files", "Test #1.ttf"))
+
+    fonts_filename = get_system_fonts_filename()
+    assert not any(samefile(filename, f) for f in fonts_filename)
+
+    install_font(filename, True)
+    fonts_filename = get_system_fonts_filename()
+    assert any(samefile(filename, f) for f in fonts_filename)
+
+    uninstall_font(filename, True)
+    fonts_filename = get_system_fonts_filename()
+    assert not any(samefile(filename, f) for f in fonts_filename)
