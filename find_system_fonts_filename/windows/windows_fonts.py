@@ -82,18 +82,20 @@ def get_filepath_from_IDWriteFontFace(font_face: IDWriteFontFace) -> Set[str]:
         raise WinError(hr)
 
     for font_file in font_files:
+            font_file._own = True
+
             font_file_reference_key = VoidPtr()
             font_file_reference_key_size = UInt32()
             hr = font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
             if FAILED(hr):
                 raise WinError(hr)
 
-            loader = IDWriteFontFileLoader()
+            loader = IDWriteFontFileLoader(own=True)
             hr = font_file.GetLoader(byref(loader))
             if FAILED(hr):
                 raise WinError(hr)
 
-            local_loader = IDWriteLocalFontFileLoader()
+            local_loader = IDWriteLocalFontFileLoader(own=True)
             hr = loader.QueryInterface(local_loader._iid_, byref(local_loader))
             if FAILED(hr):
                 raise WinError(hr)
@@ -143,7 +145,7 @@ def enum_fonts_2(logfont: POINTER(LOGFONTW), text_metric: POINTER(TEXTMETRICW), 
         if result == None or result == HGDIOBJ(GDI_ERROR):
             raise SystemApiError(f"SelectObject fails. The result is {result} which is invalid")
 
-        font_face = IDWriteFontFace()
+        font_face = IDWriteFontFace(own=True)
         enum_data.gdi_interop.CreateFontFaceFromHdc(enum_data.dc, byref(font_face))
         enum_data.fonts_filename.update(get_filepath_from_IDWriteFontFace(font_face))
 
@@ -180,10 +182,10 @@ class WindowsFonts(SystemFonts):
 
         fonts_filename = set()
 
-        dwrite_factory = IDWriteFactory()
+        dwrite_factory = IDWriteFactory(own=True)
         DWriteCreateFactory(DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
 
-        gdi_interop = IDWriteGdiInterop()
+        gdi_interop = IDWriteGdiInterop(own=True)
         dwrite_factory.GetGdiInterop(byref(gdi_interop))
 
         dc = CreateCompatibleDC(0)
@@ -208,10 +210,10 @@ class WindowsFonts(SystemFonts):
         else:
             font_filename_buffer = create_unicode_buffer(str(font_filename))
 
-        dwrite_factory = IDWriteFactory()
+        dwrite_factory = IDWriteFactory(own=True)
         DWriteCreateFactory(DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
 
-        font_file = IDWriteFontFile()
+        font_file = IDWriteFontFile(own=True)
         hr = dwrite_factory.CreateFontFileReference(font_filename_buffer, None, byref(font_file))
         if FAILED(hr):
             raise WinError(hr)
@@ -227,13 +229,13 @@ class WindowsFonts(SystemFonts):
 
         full_names: List[str] = []
         for i in range(number_of_faces.value):
-            font_face = IDWriteFontFace()
+            font_face = IDWriteFontFace(own=True)
             dwrite_factory.CreateFontFace(font_face_type.value, 1, byref(font_file), i, DWRITE_FONT_SIMULATIONS_NONE, byref(font_face))
 
-            font_face_3 = IDWriteFontFace3()
+            font_face_3 = IDWriteFontFace3(own=True)
             hr = font_face.QueryInterface(font_face_3._iid_, byref(font_face_3))
 
-            full_name = IDWriteLocalizedStrings()
+            full_name = IDWriteLocalizedStrings(own=True)
             exists = BOOL()
             font_face_3.GetInformationalStrings(
                 DWRITE_INFORMATIONAL_STRING_FULL_NAME,
