@@ -74,17 +74,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - { sys: msys, env: ucrt-x86_64 }
+          - { sys: msys, env: x86_64 }
           - { sys: mingw64, env: x86_64 }
           - { sys: ucrt64,  env: ucrt-x86_64 }
 
 
     steps:
-    - name: Set up Cygwin
-      uses: egor-tensin/setup-cygwin@v4
-      with:
-        packages: python3
-
     - name: Set up MSYS2
       uses: msys2/setup-msys2@v2
       with:
