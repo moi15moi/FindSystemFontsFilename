@@ -4,6 +4,7 @@ from filecmp import cmp
 from os.path import dirname, isfile, join, realpath, samefile
 from pathlib import Path
 from platform import system
+from sys import platform
 from find_system_fonts_filename import get_system_fonts_filename, install_font, uninstall_font, OSNotSupported
 
 
@@ -26,11 +27,11 @@ def test_get_system_fonts_filename():
             signature = font_file.read(4)
             assert signature in [truetype_signature, opentype_signature, collection_signature]
 
-@pytest.mark.skipif(system() != 'Windows', reason="Test runs only on Windows")
+@pytest.mark.skipif(not (system() == "Windows" or platform == "cygwin"), reason="Test runs only on Windows")
 def test_install_uninstall_font_windows():
 
     dir_path = dirname(realpath(__file__))
-    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+    filename = Path(join(dir_path, "files", "SuperFunky-lgmWw.ttf"))
 
     fonts_filename = get_system_fonts_filename()
     assert not any(samefile(filename, f) for f in fonts_filename)
@@ -55,7 +56,7 @@ def test_install_uninstall_font_windows():
 def test_install_uninstall_font_darwin():
 
     dir_path = dirname(realpath(__file__))
-    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+    filename = Path(join(dir_path, "files", "SuperFunky-lgmWw.ttf"))
 
     fonts_filename = get_system_fonts_filename()
     assert not any(samefile(filename, f) for f in fonts_filename)
@@ -75,7 +76,7 @@ def test_install_uninstall_font_linux():
     # requested font, so we need to compare the actual file,
     # not the file path.
     dir_path = dirname(realpath(__file__))
-    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+    filename = Path(join(dir_path, "files", "SuperFunky-lgmWw.ttf"))
 
     fonts_filename = get_system_fonts_filename()
     assert not any(cmp(filename, f, False) for f in fonts_filename)
@@ -91,7 +92,7 @@ def test_install_uninstall_font_linux():
 @pytest.mark.skipif(not (system() == 'Linux' and hasattr(sys, "getandroidapilevel")), reason="Test runs only on Android")
 def test_install_uninstall_font_android():
     dir_path = dirname(realpath(__file__))
-    filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
+    filename = Path(join(dir_path, "files", "SuperFunky-lgmWw.ttf"))
 
     with pytest.raises(OSNotSupported) as exc_info:
         install_font(filename)
