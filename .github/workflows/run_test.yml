@@ -86,6 +86,7 @@ jobs:
         install: >-
           mingw-w64-${{matrix.env}}-python
           mingw-w64-${{matrix.env}}-python-pip
+          mingw-w64-${{matrix.env}}-python-pytest
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -95,10 +96,6 @@ jobs:
         which pip3
         which pip
         pip install --upgrade --upgrade-strategy eager .
-
-    - name: Install pytest
-      run: |
-        pip install pytest
 
     - name: Run tests
       run: |
