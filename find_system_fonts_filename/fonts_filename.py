@@ -15,7 +15,7 @@ __all__ = [
 def get_system_fonts_class() -> SystemFonts:
     system_name = system()
 
-    if system_name == "Windows":
+    if system_name == "Windows" or sys.platform == "cygwin":
         from .windows import WindowsFonts
         return WindowsFonts
 
@@ -32,7 +32,7 @@ def get_system_fonts_class() -> SystemFonts:
         return MacFonts
 
     else:
-        raise OSNotSupported("FindSystemFontsFilename only works on Windows, Mac, Linux and Android.")
+        raise OSNotSupported(f"FindSystemFontsFilename only works on Windows, Mac, Linux and Android. You're on \"{system_name}\"")
 
 
 def get_system_fonts_filename() -> Set[str]:
