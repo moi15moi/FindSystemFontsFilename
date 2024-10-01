@@ -61,8 +61,6 @@ class CoreFoundation():
         core_foundation_library_name = util.find_library("CoreFoundation")
         # Hack for compatibility with macOS greater or equals to 11.0.
         # From: https://github.com/pyglet/pyglet/blob/a44e83a265e7df8ece793de865bcf3690f66adbd/pyglet/libs/darwin/cocoapy/cocoalibs.py#L10-L14
-        if core_foundation_library_name is None:
-            core_foundation_library_name = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation"
         core_foundation = cdll.LoadLibrary(core_foundation_library_name)
 
 
