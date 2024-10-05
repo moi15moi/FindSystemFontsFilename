@@ -4,7 +4,7 @@ This tool allows you to get the font filename on your system. It will collect Tr
 It uses some APIs to find the font filename:
 - Windows (Vista SP2 and more are supported): [DirectWrite API](https://learn.microsoft.com/en-us/windows/win32/directwrite/direct-write-portal) and [GDI API](https://learn.microsoft.com/en-us/windows/win32/gdi/windows-gdi)
 - macOS (10.6 and more are supported): [Core Text API](https://developer.apple.com/documentation/coretext)
-- Linux: [Fontconfig API](https://www.freedesktop.org/wiki/Software/fontconfig/)
+- Unix: [Fontconfig API](https://www.freedesktop.org/wiki/Software/fontconfig/)
 - Android (SDK/API 29 and more are supported): [NDK Font API](https://developer.android.com/ndk/reference/group/font)
 
 ## Installation

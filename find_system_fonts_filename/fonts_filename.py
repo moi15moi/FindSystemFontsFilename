@@ -29,11 +29,11 @@ def get_system_fonts_class() -> SystemFonts:
             from .android import AndroidFonts
             return AndroidFonts
         else:
-            from .linux import LinuxFonts
-            return LinuxFonts
+            from .unix import UnixFonts
+            return UnixFonts
 
     else:
-        raise OSNotSupported(f"FindSystemFontsFilename only works on Windows, Mac, Linux and Android. You are currently on \"{system_name}\".")
+        raise OSNotSupported(f"FindSystemFontsFilename only works on Windows, Mac, Unix and Android. You are currently on \"{system_name}\".")
 
 
 def get_system_fonts_filename() -> Set[str]:
