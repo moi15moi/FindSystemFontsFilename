@@ -1,6 +1,7 @@
 import pytest
 import sys
 from filecmp import cmp
+from os import name
 from os.path import dirname, isfile, join, realpath, samefile
 from pathlib import Path
 from platform import system
@@ -26,7 +27,7 @@ def test_get_system_fonts_filename():
             signature = font_file.read(4)
             assert signature in [truetype_signature, opentype_signature, collection_signature]
 
-@pytest.mark.skipif(system() != 'Windows', reason="Test runs only on Windows")
+@pytest.mark.skipif(system() != "Windows", reason="Test runs only on Windows")
 def test_install_uninstall_font_windows():
 
     dir_path = dirname(realpath(__file__))
@@ -51,7 +52,7 @@ def test_install_uninstall_font_windows():
     fonts_filename = get_system_fonts_filename()
     assert not any(samefile(filename, f) for f in fonts_filename)
 
-@pytest.mark.skipif(system() != 'Darwin', reason="Test runs only on Darwin")
+@pytest.mark.skipif(system() != "Darwin", reason="Test runs only on Darwin")
 def test_install_uninstall_font_darwin():
 
     dir_path = dirname(realpath(__file__))
@@ -68,8 +69,8 @@ def test_install_uninstall_font_darwin():
     fonts_filename = get_system_fonts_filename()
     assert not any(samefile(filename, f) for f in fonts_filename)
 
-@pytest.mark.skipif(not (system() == 'Linux' and not hasattr(sys, "getandroidapilevel")), reason="Test runs only on Linux")
-def test_install_uninstall_font_linux():
+@pytest.mark.skipif(not (system() != "Darwin" and name == "posix" and not hasattr(sys, "getandroidapilevel")), reason="Test runs only on Unix")
+def test_install_uninstall_font_unix():
 
     # On Linux, the installed font is a copy of the
     # requested font, so we need to compare the actual file,
@@ -88,7 +89,7 @@ def test_install_uninstall_font_linux():
     fonts_filename = get_system_fonts_filename()
     assert not any(cmp(filename, f, False) for f in fonts_filename)
 
-@pytest.mark.skipif(not (system() == 'Linux' and hasattr(sys, "getandroidapilevel")), reason="Test runs only on Android")
+@pytest.mark.skipif(not (system() != "Darwin" and name == "posix" and hasattr(sys, "getandroidapilevel")), reason="Test runs only on Android")
 def test_install_uninstall_font_android():
     dir_path = dirname(realpath(__file__))
     filename = Path(join(dir_path, "SuperFunky-lgmWw.ttf"))
