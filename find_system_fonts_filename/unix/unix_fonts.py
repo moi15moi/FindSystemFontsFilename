@@ -7,10 +7,10 @@ from typing import Set
 from ..exceptions import FindSystemFontsFilenameException, OSNotSupported
 from ..system_fonts import SystemFonts
 
-__all__ = ["LinuxFonts"]
+__all__ = ["UnixFonts"]
 
 
-class LinuxFonts(SystemFonts):
+class UnixFonts(SystemFonts):
     VALID_FONT_FORMATS = [
         FC_FONT_FORMAT.FT_FONT_FORMAT_TRUETYPE,
         FC_FONT_FORMAT.FT_FONT_FORMAT_CFF,
@@ -42,7 +42,7 @@ class LinuxFonts(SystemFonts):
             ):
                 font_format = FC_FONT_FORMAT(font_format_ptr.value)
 
-                if font_format in LinuxFonts.VALID_FONT_FORMATS:
+                if font_format in UnixFonts.VALID_FONT_FORMATS:
                     # Decode with utf-8 since FcChar8
                     fonts_filename.add(file_path_ptr.value.decode())
 
