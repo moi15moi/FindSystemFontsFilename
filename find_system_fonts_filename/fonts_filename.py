@@ -1,4 +1,5 @@
 import sys
+from os import name
 from pathlib import Path
 from platform import system
 from typing import Set
@@ -19,7 +20,11 @@ def get_system_fonts_class() -> SystemFonts:
         from .windows import WindowsFonts
         return WindowsFonts
 
-    elif system_name == "Linux":
+    elif system_name == "Darwin":
+        from .mac import MacFonts
+        return MacFonts
+
+    elif name == "posix":
         if hasattr(sys, "getandroidapilevel"):
             from .android import AndroidFonts
             return AndroidFonts
@@ -27,12 +32,8 @@ def get_system_fonts_class() -> SystemFonts:
             from .linux import LinuxFonts
             return LinuxFonts
 
-    elif system_name == "Darwin":
-        from .mac import MacFonts
-        return MacFonts
-
     else:
-        raise OSNotSupported("FindSystemFontsFilename only works on Windows, Mac, Linux and Android.")
+        raise OSNotSupported(f"FindSystemFontsFilename only works on Windows, Mac, Linux and Android. You are currently on \"{system_name}\".")
 
 
 def get_system_fonts_filename() -> Set[str]:
