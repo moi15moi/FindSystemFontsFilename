@@ -74,7 +74,10 @@ class UnixFonts(SystemFonts):
 
         font_config.FcStrListDone(font_dirs)
 
-        copyfile(font_filename, os.path.join(dirs_decoded, font_filename.name))
+        if not os.path.exists(dirs_decoded):
+            os.makedirs(dirs_decoded)
+
+        print(copyfile(font_filename, os.path.join(dirs_decoded, font_filename.name)))
         font_config.FcDirCacheRescan(dirs_encoded, config)
         font_config.FcConfigDestroy(config)
 
@@ -88,6 +91,7 @@ class UnixFonts(SystemFonts):
             raise OSNotSupported("To install a font, you need to have at least the version 2.11.1 of fontconfig.")
 
         config = font_config.FcConfigGetCurrent()
+        print(config)
         font_dirs = font_config.FcConfigGetFontDirs(config)
         font_config.FcStrListFirst(font_dirs)
 
@@ -106,5 +110,7 @@ class UnixFonts(SystemFonts):
         else:
             raise FindSystemFontsFilenameException(f"Couldn't get delete the font {font_filename}.")
 
+        print(os.path.isfile(file_path))
         font_config.FcDirCacheRescan(dirs_encoded, config)
+        font_config.FcConfigBuildFonts(config)
         font_config.FcConfigDestroy(config)

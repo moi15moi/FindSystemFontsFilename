@@ -139,6 +139,13 @@ class FontConfig():
         self.FcGetVersion.restype = c_int
         self.FcGetVersion.argtypes = []
 
+        # https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcconfigbuildfonts.html
+        self.FcConfigBuildFonts = font_config.FcConfigBuildFonts
+        self.FcConfigBuildFonts.restype = c_int
+        self.FcConfigBuildFonts.argtypes = [c_void_p]
+
+
+
 
     @staticmethod
     def string_to_cstring(string: str) -> c_char_p:

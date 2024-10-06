@@ -35,3 +35,32 @@ jobs:
     - name: Run tests
       run: |
         pytest
+
+  test-freebsd:
+    name: "Test on FreeBSD (${{matrix.python-version}})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["python39"] # python 3.12 isn't available on FreeBSD
+        include:
+          - python-version: "python39"
+            pip-package: "py39-pip"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up FreeBSD
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: |
+          pkg update
+          pkg install -y libX11
+          pkg install -y ${{matrix.python-version}}
+        run: |
+          python3.9 -m ensurepip --upgrade
+          python3.9 -m pip install --upgrade --upgrade-strategy eager .
+          python3.9 -m pip install pytest
+          python3.9 -m pytest

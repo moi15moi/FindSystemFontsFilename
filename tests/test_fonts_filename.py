@@ -87,6 +87,7 @@ def test_install_uninstall_font_unix():
 
     uninstall_font(filename)
     fonts_filename = get_system_fonts_filename()
+    print(fonts_filename)
     assert not any(cmp(filename, f, False) for f in fonts_filename)
 
 @pytest.mark.skipif(not (system() != "Darwin" and name == "posix" and hasattr(sys, "getandroidapilevel")), reason="Test runs only on Android")
