@@ -1,6 +1,6 @@
 from .gdi32 import LOGFONTW
 from comtypes import GUID, HRESULT, IUnknown, STDMETHOD
-from ctypes import POINTER, windll, wintypes
+from ctypes import POINTER, Structure, c_uint16, c_uint32, windll, wintypes
 from enum import IntEnum, IntFlag
 
 __all__ = [
@@ -86,6 +86,28 @@ class DWRITE_INFORMATIONAL_STRING_ID(IntEnum):
     DWRITE_INFORMATIONAL_STRING_PREFERRED_FAMILY_NAMES = DWRITE_INFORMATIONAL_STRING_TYPOGRAPHIC_FAMILY_NAMES
     DWRITE_INFORMATIONAL_STRING_PREFERRED_SUBFAMILY_NAMES = DWRITE_INFORMATIONAL_STRING_TYPOGRAPHIC_SUBFAMILY_NAMES
     DWRITE_INFORMATIONAL_STRING_WWS_FAMILY_NAME = DWRITE_INFORMATIONAL_STRING_WEIGHT_STRETCH_STYLE_FAMILY_NAME
+
+
+class DWRITE_FONT_STYLE(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_font_style
+    DWRITE_FONT_STYLE_NORMAL = 0
+    DWRITE_FONT_STYLE_OBLIQUE = 1
+    DWRITE_FONT_STYLE_ITALIC = 2
+
+
+class DWRITE_FONT_STRETCH(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_font_stretch
+    DWRITE_FONT_STRETCH_UNDEFINED = 0
+    DWRITE_FONT_STRETCH_ULTRA_CONDENSED = 1
+    DWRITE_FONT_STRETCH_EXTRA_CONDENSED = 2
+    DWRITE_FONT_STRETCH_CONDENSED = 3
+    DWRITE_FONT_STRETCH_SEMI_CONDENSED = 4
+    DWRITE_FONT_STRETCH_NORMAL = 5
+    DWRITE_FONT_STRETCH_MEDIUM = 5
+    DWRITE_FONT_STRETCH_SEMI_EXPANDED = 6
+    DWRITE_FONT_STRETCH_EXPANDED = 7
+    DWRITE_FONT_STRETCH_EXTRA_EXPANDED = 8
+    DWRITE_FONT_STRETCH_ULTRA_EXPANDED = 9
 
 
 class DWRITE_FONT_SIMULATIONS(IntFlag):
@@ -209,7 +231,7 @@ class IDWriteFont(IUnknown):
         STDMETHOD(HRESULT, "GetInformationalStrings", [wintypes.UINT, POINTER(POINTER(IDWriteLocalizedStrings)), POINTER(wintypes.BOOL)]),
         STDMETHOD(None, "GetSimulations"),  # Need to be implemented
         STDMETHOD(None, "GetMetrics"),  # Need to be implemented
-        STDMETHOD(None, "HasCharacter"),  # Need to be implemented
+        STDMETHOD(HRESULT, "HasCharacter", [wintypes.UINT, POINTER(wintypes.BOOL)]),
         STDMETHOD(HRESULT, "CreateFontFace", [POINTER(POINTER(IDWriteFontFace))]),
     ]
 
@@ -271,6 +293,188 @@ class IDWriteFontCollectionLoader(IUnknown):
     _iid_ = GUID("{cca920e4-52f0-492b-bfa8-29c72ee0a468}")
 
 
+class IDWriteInlineObject(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwriteinlineobject
+    _iid_ = GUID("{8339fde3-106f-47ab-8373-1c6295eb10b3}")
+    _methods_ = [
+        STDMETHOD(None, "Draw"),  # Need to be implemented
+        STDMETHOD(None, "GetMetrics"),  # Need to be implemented
+        STDMETHOD(None, "GetOverhangMetrics"),  # Need to be implemented
+        STDMETHOD(None, "GetBreakConditions"),  # Need to be implemented
+    ]
+
+
+class DWRITE_MATRIX(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_matrix
+    _fields_ = [
+        ("m11", wintypes.FLOAT),
+        ("m12", wintypes.FLOAT),
+        ("m21", wintypes.FLOAT),
+        ("m22", wintypes.FLOAT),
+        ("dx", wintypes.FLOAT),
+        ("dy", wintypes.FLOAT),
+    ]
+
+
+class DWRITE_GLYPH_OFFSET(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_offset
+    _fields_ = [
+        ("advanceOffset", wintypes.FLOAT),
+        ("ascenderOffset", wintypes.FLOAT),
+    ]
+
+
+class DWRITE_GLYPH_RUN(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_run
+    _fields_ = [
+        ("fontFace", POINTER(IDWriteFontFace)),
+        ("fontEmSize", wintypes.FLOAT),
+        ("glyphCount", c_uint32),
+        ("glyphIndices", POINTER(c_uint16)),
+        ("glyphAdvances", POINTER(wintypes.FLOAT)),
+        ("glyphOffsets", POINTER(DWRITE_GLYPH_OFFSET)),
+        ("isSideways", wintypes.BOOL),
+        ("bidiLevel", c_uint32),
+    ]
+
+
+class DWRITE_GLYPH_RUN_DESCRIPTION(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_run_description
+    _fields_ = [
+        ("localeName", POINTER(wintypes.WCHAR)),
+        ("string", POINTER(wintypes.WCHAR)),
+        ("stringLength", wintypes.UINT),
+        ("clusterMap", POINTER(c_uint16)),
+        ("textPosition", wintypes.UINT),
+    ]
+
+
+class DWRITE_STRIKETHROUGH(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_strikethrough
+    _fields_ = [
+        ("width", wintypes.FLOAT),
+        ("thickness", wintypes.FLOAT),
+        ("offset", wintypes.FLOAT),
+        ("readingDirection", wintypes.UINT),
+        ("flowDirection", wintypes.UINT),
+        ("localeName", POINTER(wintypes.WCHAR)),
+        ("measuringMode", wintypes.UINT),
+    ]
+
+
+class DWRITE_UNDERLINE(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_underline
+    _fields_ = [
+        ("width", wintypes.FLOAT),
+        ("thickness", wintypes.FLOAT),
+        ("offset", wintypes.FLOAT),
+        ("runHeight", wintypes.FLOAT),
+        ("readingDirection", wintypes.UINT),
+        ("flowDirection", wintypes.UINT),
+        ("localeName", POINTER(wintypes.WCHAR)),
+        ("measuringMode", wintypes.UINT),
+    ]
+
+
+class IDWritePixelSnapping(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritepixelsnapping
+    _iid_ = GUID("{eaf3a2da-ecf4-4d24-b644-b34f6842024b}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "IsPixelSnappingDisabled", [wintypes.LPVOID, POINTER(wintypes.BOOL)]), 
+        STDMETHOD(HRESULT, "GetCurrentTransform", [wintypes.LPVOID, POINTER(DWRITE_MATRIX)]), 
+        STDMETHOD(HRESULT, "GetPixelsPerDip", [wintypes.LPVOID, POINTER(wintypes.FLOAT)]),
+    ]
+
+
+class IDWriteTextRenderer(IDWritePixelSnapping):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextrenderer
+    _iid_ = GUID("{ef8a8135-5cc6-45fe-8825-c5a0724eb819}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "DrawGlyphRun", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, wintypes.INT, POINTER(DWRITE_GLYPH_RUN), POINTER(DWRITE_GLYPH_RUN_DESCRIPTION), POINTER(IUnknown)]), 
+        STDMETHOD(HRESULT, "DrawUnderline", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_UNDERLINE), POINTER(IUnknown)]), 
+        STDMETHOD(HRESULT, "DrawStrikethrough", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_STRIKETHROUGH), POINTER(IUnknown)]), 
+        STDMETHOD(HRESULT, "DrawInlineObject", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(IDWriteInlineObject), wintypes.BOOL, wintypes.BOOL, POINTER(IUnknown)]), 
+    ]
+
+
+class IDWriteTextFormat(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextformat
+    _iid_ = GUID("{9c906818-31d7-4fd3-a151-7c5e225db55a}")
+    _methods_ = [
+        STDMETHOD(None, "SetTextAlignment"),  # Need to be implemented
+        STDMETHOD(None, "SetParagraphAlignment"),  # Need to be implemented
+        STDMETHOD(None, "SetWordWrapping"),  # Need to be implemented
+        STDMETHOD(None, "SetReadingDirection"),  # Need to be implemented
+        STDMETHOD(None, "SetFlowDirection"),  # Need to be implemented
+        STDMETHOD(None, "SetIncrementalTabStop"),  # Need to be implemented
+        STDMETHOD(None, "SetTrimming"),  # Need to be implemented
+        STDMETHOD(None, "SetLineSpacing"),  # Need to be implemented
+        STDMETHOD(None, "GetTextAlignment"),  # Need to be implemented
+        STDMETHOD(None, "GetParagraphAlignment"),  # Need to be implemented
+        STDMETHOD(None, "GetWordWrapping"),  # Need to be implemented
+        STDMETHOD(None, "GetReadingDirection"),  # Need to be implemented
+        STDMETHOD(None, "GetFlowDirection"),  # Need to be implemented
+        STDMETHOD(None, "GetIncrementalTabStop"),  # Need to be implemented
+        STDMETHOD(None, "GetTrimming"),  # Need to be implemented
+        STDMETHOD(None, "GetLineSpacing"),  # Need to be implemented
+        STDMETHOD(None, "GetFontCollection"),  # Need to be implemented
+        STDMETHOD(None, "GetFontFamilyNameLength"),  # Need to be implemented
+        STDMETHOD(None, "GetFontFamilyName"),  # Need to be implemented
+        STDMETHOD(None, "GetFontWeight"),  # Need to be implemented
+        STDMETHOD(None, "GetFontStyle"),  # Need to be implemented
+        STDMETHOD(None, "GetFontStretch"),  # Need to be implemented
+        STDMETHOD(None, "GetFontSize"),  # Need to be implemented
+        STDMETHOD(None, "GetLocaleNameLength"),  # Need to be implemented
+        STDMETHOD(None, "GetLocaleName"),  # Need to be implemented
+    ]
+
+
+class IDWriteTextLayout(IDWriteTextFormat):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextlayout
+    _iid_ = GUID("{53737037-6d14-410b-9bfe-0b182bb70961}")
+    _methods_ = [
+        STDMETHOD(None, "SetMaxWidth"),  # Need to be implemented
+        STDMETHOD(None, "SetMaxHeight"),  # Need to be implemented
+        STDMETHOD(None, "SetFontCollection"),  # Need to be implemented
+        STDMETHOD(None, "SetFontFamilyName"),  # Need to be implemented
+        STDMETHOD(None, "SetFontWeight"),  # Need to be implemented
+        STDMETHOD(None, "SetFontStyle"),  # Need to be implemented
+        STDMETHOD(None, "SetFontStretch"),  # Need to be implemented
+        STDMETHOD(None, "SetFontSize"),  # Need to be implemented
+        STDMETHOD(None, "SetUnderline"),  # Need to be implemented
+        STDMETHOD(None, "SetStrikethrough"),  # Need to be implemented
+        STDMETHOD(None, "SetDrawingEffect"),  # Need to be implemented
+        STDMETHOD(None, "SetInlineObject"),  # Need to be implemented
+        STDMETHOD(None, "SetTypography"),  # Need to be implemented
+        STDMETHOD(None, "SetLocaleName"),  # Need to be implemented
+        STDMETHOD(None, "GetMaxWidth"),  # Need to be implemented
+        STDMETHOD(None, "GetMaxHeight"),  # Need to be implemented
+        STDMETHOD(None, "GetFontCollection"),  # Need to be implemented
+        STDMETHOD(None, "GetFontFamilyNameLength"),  # Need to be implemented
+        STDMETHOD(None, "GetFontFamilyName"),  # Need to be implemented
+        STDMETHOD(None, "GetFontWeight"),  # Need to be implemented
+        STDMETHOD(None, "GetFontStyle"),  # Need to be implemented
+        STDMETHOD(None, "GetFontStretch"),  # Need to be implemented
+        STDMETHOD(None, "GetFontSize"),  # Need to be implemented
+        STDMETHOD(None, "GetUnderline"),  # Need to be implemented
+        STDMETHOD(None, "GetStrikethrough"),  # Need to be implemented
+        STDMETHOD(None, "GetDrawingEffect"),  # Need to be implemented
+        STDMETHOD(None, "GetInlineObject"),  # Need to be implemented
+        STDMETHOD(None, "GetTypography"),  # Need to be implemented
+        STDMETHOD(None, "GetLocaleNameLength"),  # Need to be implemented
+        STDMETHOD(None, "GetLocaleName"),  # Need to be implemented
+        STDMETHOD(HRESULT, "Draw", [wintypes.LPVOID, POINTER(IDWriteTextRenderer), wintypes.FLOAT, wintypes.FLOAT]),
+        STDMETHOD(None, "GetLineMetrics"),  # Need to be implemented
+        STDMETHOD(None, "GetMetrics"),  # Need to be implemented
+        STDMETHOD(None, "GetOverhangMetrics"),  # Need to be implemented
+        STDMETHOD(None, "GetClusterMetrics"),  # Need to be implemented
+        STDMETHOD(None, "DetermineMinWidth"),  # Need to be implemented
+        STDMETHOD(None, "HitTestPoint"),  # Need to be implemented
+        STDMETHOD(None, "HitTestTextPosition"),  # Need to be implemented
+        STDMETHOD(None, "HitTestTextRange"),  # Need to be implemented
+    ]
+
+
 class IDWriteFactory(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefactory
     _iid_ = GUID("{b859ee5a-d838-4b5b-a2e8-1adc7d93db48}")
@@ -287,10 +491,10 @@ class IDWriteFactory(IUnknown):
         STDMETHOD(None, "CreateCustomRenderingParams"),  # Need to be implemented
         STDMETHOD(HRESULT, "RegisterFontFileLoader", [POINTER(IDWriteFontFileLoader)]),
         STDMETHOD(HRESULT, "UnregisterFontFileLoader", [POINTER(IDWriteFontFileLoader)]),
-        STDMETHOD(None, "CreateTextFormat"),  # Need to be implemented
+        STDMETHOD(HRESULT, "CreateTextFormat", [POINTER(wintypes.WCHAR), POINTER(IDWriteFontCollection), wintypes.INT, wintypes.INT, wintypes.INT, wintypes.FLOAT, POINTER(wintypes.WCHAR), POINTER(POINTER(IDWriteTextFormat))]),
         STDMETHOD(None, "CreateTypography"),  # Need to be implemented
         STDMETHOD(HRESULT, "GetGdiInterop", [POINTER(POINTER(IDWriteGdiInterop))]),
-        STDMETHOD(None, "CreateTextLayout"),  # Need to be implemented
+        STDMETHOD(HRESULT, "CreateTextLayout", [POINTER(wintypes.WCHAR), wintypes.UINT, POINTER(IDWriteTextFormat), wintypes.FLOAT, wintypes.FLOAT, POINTER(POINTER(IDWriteTextLayout))]),
         STDMETHOD(None, "CreateGdiCompatibleTextLayout"),  # Need to be implemented
         STDMETHOD(None, "CreateEllipsisTrimmingSign"),  # Need to be implemented
         STDMETHOD(None, "CreateTextAnalyzer"),  # Need to be implemented

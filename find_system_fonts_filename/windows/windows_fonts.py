@@ -4,6 +4,11 @@ from .dwrite import (
     DWRITE_FACTORY_TYPE,
     DWRITE_FONT_FILE_TYPE,
     DWRITE_FONT_SIMULATIONS,
+    DWRITE_FONT_STRETCH,
+    DWRITE_FONT_STYLE,
+    DWRITE_MATRIX,
+    DWRITE_GLYPH_RUN,
+    DWRITE_GLYPH_RUN_DESCRIPTION,
     DWRITE_INFORMATIONAL_STRING_ID,
     IDWriteFactory,
     IDWriteFont,
@@ -15,18 +20,22 @@ from .dwrite import (
     IDWriteFontFileLoader,
     IDWriteGdiInterop,
     IDWriteLocalFontFileLoader,
-    IDWriteLocalizedStrings
+    IDWriteLocalizedStrings,
+    IDWriteTextFormat,
+    IDWriteTextLayout,
+    IDWriteTextRenderer,
+    IDWriteInlineObject, DWRITE_STRIKETHROUGH, DWRITE_UNDERLINE
 )
 from .gdi32 import GDI32, ENUMLOGFONTEXW, TEXTMETRICW
 from .kernel32 import Kernel32
 from .msvcrt import MSVCRT
 from .user32 import User32
 from .version_helpers import WindowsVersionHelpers
-from comtypes import COMObject
+from comtypes import COMObject, IUnknown
 from ctypes import addressof, byref, cast, create_unicode_buffer, POINTER, py_object, sizeof, wintypes
 from pathlib import Path
 from sys import getwindowsversion
-from typing import List, Set
+from typing import List, Optional, Set
 from ..exceptions import NotSupportedFontFile, OSNotSupported, SystemApiError
 from ..system_fonts import SystemFonts
 
@@ -300,6 +309,45 @@ class WindowsFonts(SystemFonts):
         user32.SendNotifyMessageW(user32.HWND_BROADCAST, user32.WM_FONTCHANGE, 0, 0)
 
 
+    def get_font_fallback(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+
+        dwrite = DWrite()
+
+        dwrite_factory = POINTER(IDWriteFactory)()
+        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
+
+        font_style = DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_ITALIC if is_italic else DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_NORMAL
+        text_format = POINTER(IDWriteTextFormat)()
+        dwrite_factory.CreateTextFormat(family_name, None, font_weight, font_style, DWRITE_FONT_STRETCH.DWRITE_FONT_STRETCH_NORMAL, 1.0, "", byref(text_format))
+
+        buffer = create_unicode_buffer(characters)
+        text_layout = POINTER(IDWriteTextLayout)()
+        dwrite_factory.CreateTextLayout(buffer, len(buffer), text_format, 0.0, 0.0, byref(text_layout))
+
+        font = POINTER(IDWriteFont)()
+        renderer = CustomTextRenderer(dwrite_factory)
+        text_layout.Draw(byref(font), renderer, 0.0, 0.0)
+
+        if not font:
+            return None
+
+        print(font)
+        print("This print is displayed")
+
+        for character in characters:
+            exists = wintypes.BOOL()
+            font.HasCharacter(ord(character), byref(exists))
+            
+            if not exists.value:
+                return None
+
+        print("This print isn't displayed")
+
+        font_face = POINTER(IDWriteFontFace)()
+        font.CreateFontFace(byref(font_face))
+        return Path(get_filepath_from_IDWriteFontFace(font_face).pop())
+
+
 class CustomFontFileEnumerator(COMObject):
     _com_interfaces_ = [IDWriteFontFileEnumerator]
 
@@ -350,5 +398,107 @@ class CustomFontCollectionLoader(COMObject):
         enum = CustomFontFileEnumerator(factory, self.font_files_path)
         enumerator_ref = enum.QueryInterface(IDWriteFontFileEnumerator)
         font_file_enumerator[0] = enumerator_ref
+
+        return 0 # S_OK
+
+
+class CustomTextRenderer(COMObject):
+    _com_interfaces_ = [IDWriteTextRenderer]
+
+    def __init__(self, factory: POINTER(IDWriteFactory)):
+        super(CustomTextRenderer, self).__init__()
+        self.factory = factory
+
+    def IDWritePixelSnapping_IsPixelSnappingDisabled(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            isDisabled: POINTER(wintypes.BOOL),
+        )-> int:
+
+        isDisabled.contents.value = True
+        return 0 # S_OK
+
+    def IDWritePixelSnapping_GetCurrentTransform(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            transform: POINTER(DWRITE_MATRIX),
+        )-> int:
+
+        return -2147467263 # E_NOTIMPL
+
+    def IDWritePixelSnapping_GetPixelsPerDip(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            pixelsPerDip: POINTER(wintypes.FLOAT),
+        )-> int:
+
+        return -2147467263 # E_NOTIMPL
+
+    def IDWriteTextRenderer_DrawGlyphRun(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            measuringMode: wintypes.INT,
+            glyphRun: POINTER(DWRITE_GLYPH_RUN),
+            glyphRunDescription: POINTER(DWRITE_GLYPH_RUN_DESCRIPTION),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        font_collection = POINTER(IDWriteFontCollection)()
+        font_ptr = cast(clientDrawingContext, POINTER(POINTER(IDWriteFont)))
+
+        self.factory.GetSystemFontCollection(byref(font_collection), True)
+
+        fontFace = glyphRun.contents.fontFace
+        # I don't know why, but if I don't call AddRef(), it crash
+        fontFace.AddRef()
+
+        font_collection.GetFontFromFontFace(fontFace, font_ptr[0])
+
+        return 0 # S_OK
+
+
+    def IDWriteTextRenderer_DrawUnderline(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            underline: POINTER(DWRITE_UNDERLINE),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        return 0 # S_OK
+
+
+
+    def IDWriteTextRenderer_DrawStrikethrough(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            strikethrough: POINTER(DWRITE_STRIKETHROUGH),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        return 0 # S_OK
+
+    def IDWriteTextRenderer_DrawInlineObject(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            originX: wintypes.FLOAT,
+            originY: wintypes.FLOAT,
+            inlineObject: POINTER(IDWriteInlineObject),
+            isSideways: wintypes.BOOL,
+            isRightToLeft: wintypes.BOOL,
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
 
         return 0 # S_OK
