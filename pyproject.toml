@@ -8,7 +8,7 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "comtypes; platform_system=='Windows'",
+    "comtypes>=1.4.8; platform_system=='Windows'",
 ]
 classifiers=[
         "Development Status :: 4 - Beta",
@@ -20,6 +20,7 @@ classifiers=[
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Operating System :: Android",
         "Operating System :: MacOS",
         "Operating System :: Microsoft :: Windows",
