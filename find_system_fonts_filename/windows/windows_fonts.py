@@ -322,7 +322,14 @@ class WindowsFonts(SystemFonts):
 
         buffer = create_unicode_buffer(characters)
         text_layout = POINTER(IDWriteTextLayout)()
-        dwrite_factory.CreateTextLayout(buffer, len(buffer), text_format, 0.0, 0.0, byref(text_layout))
+        dwrite_factory.CreateTextLayout(
+            buffer,
+            len(buffer) - 1, # -1 to exclude the NULL character
+            text_format,
+            0.0,
+            0.0,
+            byref(text_layout)
+        )
 
         font = POINTER(IDWriteFont)()
         renderer = CustomTextRenderer(dwrite_factory)
@@ -331,27 +338,12 @@ class WindowsFonts(SystemFonts):
         if not font:
             return None
         
-        full_name = POINTER(IDWriteLocalizedStrings)()
-        exists = wintypes.BOOL()
-        font.GetInformationalStrings(
-            DWRITE_INFORMATIONAL_STRING_ID.DWRITE_INFORMATIONAL_STRING_FULL_NAME,
-            byref(full_name),
-            byref(exists)
-        )
-
-        print(font)
-        print("This print is displayed")
-
         for character in characters:
-            print("Before HasCharacter")
             exists = wintypes.BOOL()
             font.HasCharacter(ord(character), byref(exists))
-            print("After HasCharacter")
 
             if not exists.value:
                 return None
-
-        print("This print isn't displayed")
 
         font_face = POINTER(IDWriteFontFace)()
         font.CreateFontFace(byref(font_face))
@@ -460,15 +452,14 @@ class CustomTextRenderer(COMObject):
         )-> int:
 
         font_collection = POINTER(IDWriteFontCollection)()
-        font_ptr = cast(clientDrawingContext, POINTER(POINTER(IDWriteFont)))
-
         self.factory.GetSystemFontCollection(byref(font_collection), True)
 
         fontFace = glyphRun.contents.fontFace
         # I don't know why, but if I don't call AddRef(), it crash
         fontFace.AddRef()
 
-        font_collection.GetFontFromFontFace(fontFace, font_ptr[0])
+        font_ptr = cast(clientDrawingContext, POINTER(POINTER(IDWriteFont)))
+        font_collection.GetFontFromFontFace(fontFace, font_ptr)
 
         return 0 # S_OK
 
