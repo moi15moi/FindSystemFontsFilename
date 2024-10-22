@@ -330,14 +330,24 @@ class WindowsFonts(SystemFonts):
 
         if not font:
             return None
+        
+        full_name = POINTER(IDWriteLocalizedStrings)()
+        exists = wintypes.BOOL()
+        font.GetInformationalStrings(
+            DWRITE_INFORMATIONAL_STRING_ID.DWRITE_INFORMATIONAL_STRING_FULL_NAME,
+            byref(full_name),
+            byref(exists)
+        )
 
         print(font)
         print("This print is displayed")
 
         for character in characters:
+            print("Before HasCharacter")
             exists = wintypes.BOOL()
             font.HasCharacter(ord(character), byref(exists))
-            
+            print("After HasCharacter")
+
             if not exists.value:
                 return None
 
