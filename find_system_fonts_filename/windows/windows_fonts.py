@@ -4,29 +4,43 @@ from .dwrite import (
     DWRITE_FACTORY_TYPE,
     DWRITE_FONT_FILE_TYPE,
     DWRITE_FONT_SIMULATIONS,
+    DWRITE_FONT_STRETCH,
+    DWRITE_FONT_STYLE,
+    DWRITE_MATRIX,
+    DWRITE_GLYPH_RUN,
+    DWRITE_GLYPH_RUN_DESCRIPTION,
     DWRITE_INFORMATIONAL_STRING_ID,
+    DWRITE_READING_DIRECTION,
     IDWriteFactory,
+    IDWriteFactory2,
     IDWriteFont,
     IDWriteFontCollection,
     IDWriteFontCollectionLoader,
     IDWriteFontFace,
+    IDWriteFontFallback,
     IDWriteFontFile,
     IDWriteFontFileEnumerator,
     IDWriteFontFileLoader,
     IDWriteGdiInterop,
     IDWriteLocalFontFileLoader,
-    IDWriteLocalizedStrings
+    IDWriteLocalizedStrings,
+    IDWriteNumberSubstitution,
+    IDWriteTextAnalysisSource,
+    IDWriteTextFormat,
+    IDWriteTextLayout,
+    IDWriteTextRenderer,
+    IDWriteInlineObject, DWRITE_STRIKETHROUGH, DWRITE_UNDERLINE
 )
 from .gdi32 import GDI32, ENUMLOGFONTEXW, TEXTMETRICW
 from .kernel32 import Kernel32
 from .msvcrt import MSVCRT
 from .user32 import User32
 from .version_helpers import WindowsVersionHelpers
-from comtypes import COMObject
+from comtypes import COMObject, IUnknown
 from ctypes import addressof, byref, cast, create_unicode_buffer, POINTER, py_object, sizeof, wintypes
 from pathlib import Path
 from sys import getwindowsversion
-from typing import List, Set
+from typing import List, Optional, Set
 from ..exceptions import NotSupportedFontFile, OSNotSupported, SystemApiError
 from ..system_fonts import SystemFonts
 
@@ -299,6 +313,130 @@ class WindowsFonts(SystemFonts):
 
         user32.SendNotifyMessageW(user32.HWND_BROADCAST, user32.WM_FONTCHANGE, 0, 0)
 
+    def get_font_fallback(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+        windows_version = getwindowsversion()
+
+        if WindowsVersionHelpers.is_windows_10_or_greater(windows_version):
+            fonts_filename = WindowsFonts._get_font_fallback_windows_8_1_or_more(family_name, font_weight, is_italic, characters)
+        elif WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
+            fonts_filename = WindowsFonts._get_font_fallback_windows_vista_sp2_or_more()
+        else:
+            raise OSNotSupported("FindSystemFontsFilename only works on Windows Vista SP2 or more")
+
+        return fonts_filename
+
+    @staticmethod
+    def _get_font_fallback_windows_8_1_or_more(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+        dwrite = DWrite()
+
+        dwrite_factory = POINTER(IDWriteFactory2)()
+        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
+
+        font_fallback = POINTER(IDWriteFontFallback)()
+        dwrite_factory.GetSystemFontFallback(byref(font_fallback))
+
+        text_analysis_source = CustomTextAnalysisSource("", characters)
+        mapped_length = wintypes.UINT()
+        font = POINTER(IDWriteFont)()
+        scale = wintypes.FLOAT()
+        font_style = DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_ITALIC if is_italic else DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_NORMAL
+        font_fallback.MapCharacters(
+            text_analysis_source,
+            0,
+            text_analysis_source.text_len,
+            None,
+            family_name,
+            font_weight,
+            font_style,
+            DWRITE_FONT_STRETCH.DWRITE_FONT_STRETCH_NORMAL,
+            byref(mapped_length),
+            byref(font),
+            byref(scale)
+        )
+
+        if not font:
+            return None
+
+        kernel32 = Kernel32()
+        full_name = POINTER(IDWriteLocalizedStrings)()
+        exists = wintypes.BOOL()
+        font.GetInformationalStrings(
+            DWRITE_INFORMATIONAL_STRING_ID.DWRITE_INFORMATIONAL_STRING_FULL_NAME,
+            byref(full_name),
+            byref(exists)
+        )
+
+        if not exists:
+            raise SystemApiError("Could not fetch the font name")
+
+        # Based on https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename#remarks
+        locale_name = create_unicode_buffer(kernel32.LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetUserDefaultLocaleName(locale_name, kernel32.LOCALE_NAME_MAX_LENGTH)
+
+        index = wintypes.UINT()
+        exists = wintypes.BOOL()
+        full_name.FindLocaleName(locale_name, byref(index), byref(exists))
+
+        if not exists.value:
+            full_name.FindLocaleName("en-us", byref(index), byref(exists))
+
+        if not exists.value:
+            index = 0
+
+        length = wintypes.UINT()
+        full_name.GetStringLength(index, byref(length))
+
+        family_names_buffer = create_unicode_buffer(length.value + 1)
+        full_name.GetString(index, family_names_buffer, len(family_names_buffer))
+
+        print(family_names_buffer.value)
+
+
+        font_face = POINTER(IDWriteFontFace)()
+        font.CreateFontFace(byref(font_face))
+        return Path(get_filepath_from_IDWriteFontFace(font_face).pop())
+
+    @staticmethod
+    def _get_font_fallback_windows_vista_sp2_or_more(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+
+        dwrite = DWrite()
+
+        dwrite_factory = POINTER(IDWriteFactory)()
+        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
+
+        font_style = DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_ITALIC if is_italic else DWRITE_FONT_STYLE.DWRITE_FONT_STYLE_NORMAL
+        text_format = POINTER(IDWriteTextFormat)()
+        dwrite_factory.CreateTextFormat(family_name, None, font_weight, font_style, DWRITE_FONT_STRETCH.DWRITE_FONT_STRETCH_NORMAL, 1.0, "", byref(text_format))
+
+        buffer = create_unicode_buffer(characters)
+        text_layout = POINTER(IDWriteTextLayout)()
+        dwrite_factory.CreateTextLayout(
+            buffer,
+            len(buffer) - 1, # -1 to exclude the NULL character
+            text_format,
+            0.0,
+            0.0,
+            byref(text_layout)
+        )
+
+        font = POINTER(IDWriteFont)()
+        renderer = CustomTextRenderer(dwrite_factory)
+        text_layout.Draw(byref(font), renderer, 0.0, 0.0)
+
+        if not font:
+            return None
+
+        for character in characters:
+            exists = wintypes.BOOL()
+            font.HasCharacter(ord(character), byref(exists))
+
+            if not exists.value:
+                return None
+
+        font_face = POINTER(IDWriteFontFace)()
+        font.CreateFontFace(byref(font_face))
+        return Path(get_filepath_from_IDWriteFontFace(font_face).pop())
+
 
 class CustomFontFileEnumerator(COMObject):
     _com_interfaces_ = [IDWriteFontFileEnumerator]
@@ -352,3 +490,171 @@ class CustomFontCollectionLoader(COMObject):
         font_file_enumerator[0] = enumerator_ref
 
         return 0 # S_OK
+
+
+class CustomTextRenderer(COMObject):
+    _com_interfaces_ = [IDWriteTextRenderer]
+
+    def __init__(self, factory: POINTER(IDWriteFactory)):
+        super(CustomTextRenderer, self).__init__()
+        self.factory = factory
+
+    def IDWritePixelSnapping_IsPixelSnappingDisabled(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            isDisabled: POINTER(wintypes.BOOL),
+        )-> int:
+
+        isDisabled.contents.value = True
+        return 0 # S_OK
+
+    def IDWritePixelSnapping_GetCurrentTransform(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            transform: POINTER(DWRITE_MATRIX),
+        )-> int:
+
+        return -2147467263 # E_NOTIMPL
+
+    def IDWritePixelSnapping_GetPixelsPerDip(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            pixelsPerDip: POINTER(wintypes.FLOAT),
+        )-> int:
+
+        return -2147467263 # E_NOTIMPL
+
+    def IDWriteTextRenderer_DrawGlyphRun(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            measuringMode: wintypes.INT,
+            glyphRun: POINTER(DWRITE_GLYPH_RUN),
+            glyphRunDescription: POINTER(DWRITE_GLYPH_RUN_DESCRIPTION),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        font_collection = POINTER(IDWriteFontCollection)()
+        self.factory.GetSystemFontCollection(byref(font_collection), True)
+
+        fontFace = glyphRun.contents.fontFace
+        # I don't know why, but if I don't call AddRef(), it crash
+        fontFace.AddRef()
+
+        font_ptr = cast(clientDrawingContext, POINTER(POINTER(IDWriteFont)))
+        font_collection.GetFontFromFontFace(fontFace, font_ptr)
+
+        return 0 # S_OK
+
+
+    def IDWriteTextRenderer_DrawUnderline(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            underline: POINTER(DWRITE_UNDERLINE),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        return 0 # S_OK
+
+
+    def IDWriteTextRenderer_DrawStrikethrough(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            baselineOriginX: wintypes.FLOAT,
+            baselineOriginY: wintypes.FLOAT,
+            strikethrough: POINTER(DWRITE_STRIKETHROUGH),
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        return 0 # S_OK
+
+    def IDWriteTextRenderer_DrawInlineObject(
+            self,
+            this,
+            clientDrawingContext: wintypes.LPVOID,
+            originX: wintypes.FLOAT,
+            originY: wintypes.FLOAT,
+            inlineObject: POINTER(IDWriteInlineObject),
+            isSideways: wintypes.BOOL,
+            isRightToLeft: wintypes.BOOL,
+            clientDrawingEffect: POINTER(IUnknown),
+        )-> int:
+
+        return 0 # S_OK
+
+
+class CustomTextAnalysisSource(COMObject):
+    _com_interfaces_ = [IDWriteTextAnalysisSource]
+
+    def __init__(self, locale: str, text: str):
+        super(CustomTextAnalysisSource, self).__init__()
+        self.locale = create_unicode_buffer(locale)
+        self.locale_len = len(self.locale) - 1 # -1 to exclude the NULL character
+        self.text = create_unicode_buffer(text)
+        self.text_len = len(self.text) - 1 # -1 to exclude the NULL character
+
+    def IDWriteTextAnalysisSource_GetTextAtPosition(
+            self,
+            this,
+            textPosition: wintypes.UINT,
+            textString: POINTER(POINTER(wintypes.WCHAR)),
+            textLength: POINTER(wintypes.UINT)
+        )-> int:
+        if textPosition >= self.text_len:
+            textString[0] = None
+            textLength.contents.value = 0
+        else:
+            textString[0] = cast(addressof(self.text) + sizeof(wintypes.WCHAR) * textPosition, POINTER(wintypes.WCHAR))
+            textLength.contents.value = self.text_len - textPosition
+
+        return 0 # S_OK
+
+    def IDWriteTextAnalysisSource_GetTextBeforePosition(
+            self,
+            this,
+            textPosition: wintypes.UINT,
+            textString: POINTER(POINTER(wintypes.WCHAR)),
+            textLength: POINTER(wintypes.UINT)
+        )-> int:
+        return -2147467263 # E_NOTIMPL
+
+    def IDWriteTextAnalysisSource_GetParagraphReadingDirection(
+            self,
+            this
+        )-> int:
+        # The return change nothing about the font fallback, because the method isn't called.
+        return DWRITE_READING_DIRECTION.DWRITE_READING_DIRECTION_LEFT_TO_RIGHT
+
+    def IDWriteTextAnalysisSource_GetLocaleName(
+            self,
+            this,
+            textPosition: wintypes.UINT,
+            textLength: POINTER(wintypes.UINT),
+            localeName: POINTER(POINTER(wintypes.WCHAR))
+        )-> int:
+        if textPosition >= self.locale_len:
+            localeName[0] = None
+            textLength.contents.value = 0
+        else:
+            localeName[0] = cast(addressof(self.locale) + sizeof(wintypes.WCHAR) * textPosition, POINTER(wintypes.WCHAR))
+            textLength.contents.value = self.locale_len
+
+        return 0 # S_OK
+
+    def IDWriteTextAnalysisSource_GetNumberSubstitution(
+            self,
+            this,
+            textPosition: wintypes.UINT,
+            textLength: POINTER(wintypes.UINT),
+            numberSubstitution: POINTER(POINTER(IDWriteNumberSubstitution))
+        )-> int:
+        return -2147467263 # E_NOTIMPL

@@ -32,6 +32,11 @@ class WindowsVersionHelpers:
         return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 6002)
 
     @staticmethod
+    def is_windows_8_1_or_greater(windows_version) -> bool:
+        # From https://www.lifewire.com/windows-version-numbers-2625171
+        return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 6, 0, 9200)
+
+    @staticmethod
     def is_windows_10_or_greater(windows_version) -> bool:
         # From https://www.lifewire.com/windows-version-numbers-2625171
         return WindowsVersionHelpers.is_windows_version_or_greater(windows_version, 10, 0, 10240)
