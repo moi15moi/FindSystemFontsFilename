@@ -110,6 +110,14 @@ class DWRITE_FONT_STRETCH(IntEnum):
     DWRITE_FONT_STRETCH_ULTRA_EXPANDED = 9
 
 
+class DWRITE_READING_DIRECTION(IntEnum):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_reading_direction
+    DWRITE_READING_DIRECTION_LEFT_TO_RIGHT = 0
+    DWRITE_READING_DIRECTION_RIGHT_TO_LEFT = 1
+    DWRITE_READING_DIRECTION_TOP_TO_BOTTOM = 2
+    DWRITE_READING_DIRECTION_BOTTOM_TO_TOP = 3
+
+
 class DWRITE_FONT_SIMULATIONS(IntFlag):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/ne-dwrite-dwrite_font_simulations
     DWRITE_FONT_SIMULATIONS_NONE = 0x0000
@@ -380,8 +388,8 @@ class IDWritePixelSnapping(IUnknown):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritepixelsnapping
     _iid_ = GUID("{eaf3a2da-ecf4-4d24-b644-b34f6842024b}")
     _methods_ = [
-        STDMETHOD(HRESULT, "IsPixelSnappingDisabled", [wintypes.LPVOID, POINTER(wintypes.BOOL)]), 
-        STDMETHOD(HRESULT, "GetCurrentTransform", [wintypes.LPVOID, POINTER(DWRITE_MATRIX)]), 
+        STDMETHOD(HRESULT, "IsPixelSnappingDisabled", [wintypes.LPVOID, POINTER(wintypes.BOOL)]),
+        STDMETHOD(HRESULT, "GetCurrentTransform", [wintypes.LPVOID, POINTER(DWRITE_MATRIX)]),
         STDMETHOD(HRESULT, "GetPixelsPerDip", [wintypes.LPVOID, POINTER(wintypes.FLOAT)]),
     ]
 
@@ -390,10 +398,10 @@ class IDWriteTextRenderer(IDWritePixelSnapping):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextrenderer
     _iid_ = GUID("{ef8a8135-5cc6-45fe-8825-c5a0724eb819}")
     _methods_ = [
-        STDMETHOD(HRESULT, "DrawGlyphRun", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, wintypes.INT, POINTER(DWRITE_GLYPH_RUN), POINTER(DWRITE_GLYPH_RUN_DESCRIPTION), POINTER(IUnknown)]), 
-        STDMETHOD(HRESULT, "DrawUnderline", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_UNDERLINE), POINTER(IUnknown)]), 
-        STDMETHOD(HRESULT, "DrawStrikethrough", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_STRIKETHROUGH), POINTER(IUnknown)]), 
-        STDMETHOD(HRESULT, "DrawInlineObject", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(IDWriteInlineObject), wintypes.BOOL, wintypes.BOOL, POINTER(IUnknown)]), 
+        STDMETHOD(HRESULT, "DrawGlyphRun", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, wintypes.INT, POINTER(DWRITE_GLYPH_RUN), POINTER(DWRITE_GLYPH_RUN_DESCRIPTION), POINTER(IUnknown)]),
+        STDMETHOD(HRESULT, "DrawUnderline", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_UNDERLINE), POINTER(IUnknown)]),
+        STDMETHOD(HRESULT, "DrawStrikethrough", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(DWRITE_STRIKETHROUGH), POINTER(IUnknown)]),
+        STDMETHOD(HRESULT, "DrawInlineObject", [wintypes.LPVOID, wintypes.FLOAT, wintypes.FLOAT, POINTER(IDWriteInlineObject), wintypes.BOOL, wintypes.BOOL, POINTER(IUnknown)]),
     ]
 
 
@@ -516,11 +524,36 @@ class IDWriteFactory1(IDWriteFactory):
     ]
 
 
+class IDWriteNumberSubstitution(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritenumbersubstitution
+    _iid_ = GUID("{14885cc9-bab0-4f90-b6ed-5c366a2cd03d}")
+
+
+class IDWriteTextAnalysisSource(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextanalysissource
+    _iid_ = GUID("{688e1a58-5094-47c8-adc8-fbcea60ae92b}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "GetTextAtPosition", [wintypes.UINT, POINTER(POINTER(wintypes.WCHAR)), POINTER(wintypes.UINT)]),
+        STDMETHOD(HRESULT, "GetTextBeforePosition", [wintypes.UINT, POINTER(POINTER(wintypes.WCHAR)), POINTER(wintypes.UINT)]),
+        STDMETHOD(wintypes.INT, "GetParagraphReadingDirection"),
+        STDMETHOD(HRESULT, "GetLocaleName", [wintypes.UINT, POINTER(wintypes.UINT), POINTER(POINTER(wintypes.WCHAR))]),
+        STDMETHOD(HRESULT, "GetNumberSubstitution", [wintypes.UINT, POINTER(wintypes.UINT), POINTER(POINTER(IDWriteNumberSubstitution))]),
+    ]
+
+
+class IDWriteFontFallback(IUnknown):
+    # https://learn.microsoft.com/en-us/windows/win32/api/dwrite_2/nn-dwrite_2-idwritefontfallback
+    _iid_ = GUID("{efa008f9-f7a1-48bf-b05c-f224713cc0ff}")
+    _methods_ = [
+        STDMETHOD(HRESULT, "MapCharacters", [POINTER(IDWriteTextAnalysisSource), wintypes.UINT, wintypes.UINT, POINTER(IDWriteFontCollection), POINTER(wintypes.WCHAR), wintypes.INT, wintypes.INT, wintypes.INT, POINTER(wintypes.UINT), POINTER(POINTER(IDWriteFont)), POINTER(wintypes.FLOAT)]),
+    ]
+
+
 class IDWriteFactory2(IDWriteFactory1):
     # https://learn.microsoft.com/en-us/windows/win32/api/dwrite_2/nn-dwrite_2-idwritefactory2
     _iid_ = GUID("{0439fc60-ca44-4994-8dee-3a9af7b732ec}")
     _methods_ = [
-        STDMETHOD(None, "GetSystemFontFallback"),  # Need to be implemented
+        STDMETHOD(HRESULT, "GetSystemFontFallback", [POINTER(POINTER(IDWriteFontFallback))]),
         STDMETHOD(None, "CreateFontFallbackBuilder"),  # Need to be implemented
         STDMETHOD(None, "TranslateColorGlyphRun"),  # Need to be implemented
         STDMETHOD(None, "CreateCustomRenderingParams2"),  # Need to be implemented
