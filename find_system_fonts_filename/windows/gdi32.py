@@ -62,7 +62,7 @@ class ENUMLOGFONTEXW(Structure):
 
 class GDI32:
     def __init__(self) -> None:
-        gdi = windll.gdi32
+        gdi = windll.LoadLibrary("gdi32")
 
         self.LF_FACESIZE = 32
         self.RASTER_FONTTYPE = 0x0001

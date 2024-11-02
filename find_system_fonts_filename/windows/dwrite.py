@@ -342,7 +342,7 @@ class IDWriteFactory3(IDWriteFactory2):
 
 class DWrite:
     def __init__(self) -> None:
-        dwrite = windll.dwrite
+        dwrite = windll.LoadLibrary("dwrite")
 
         # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-dwritecreatefactory
         self.DWriteCreateFactory = dwrite.DWriteCreateFactory
