@@ -26,7 +26,7 @@ class RegistryDataType(Enum):
 
 class Advapi32():
     def __init__(self) -> None:
-        advapi32 = windll.advapi32
+        advapi32 = windll.LoadLibrary("advapi32")
 
         self.HKEY_CURRENT_USER = wintypes.HKEY(0x80000001)
         self.KEY_SET_VALUE = 0x0002
