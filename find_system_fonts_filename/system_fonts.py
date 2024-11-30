@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Set
+from typing import Optional, Set
 
 
 class SystemFonts(ABC):
@@ -25,5 +25,13 @@ class SystemFonts(ABC):
     def uninstall_font(font_filename: Path, remove_font_in_registry: bool) -> None:
         """
         Uninstall a font from it's filename.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_font_fallback(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+        """
+        TODO.
         """
         pass

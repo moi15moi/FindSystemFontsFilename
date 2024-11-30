@@ -2,7 +2,7 @@ import sys
 from os import name
 from pathlib import Path
 from platform import system
-from typing import Set
+from typing import Optional, Set
 from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
 
@@ -10,6 +10,7 @@ __all__ = [
     "get_system_fonts_filename",
     "install_font",
     "uninstall_font",
+    "get_font_fallback",
 ]
 
 
@@ -69,3 +70,9 @@ def uninstall_font(font_filename: Path, remove_font_in_registry: bool = False) -
         raise FileNotFoundError(f"The file \"{font_filename}\" doesn't exist")
 
     return get_system_fonts_class().uninstall_font(font_filename, remove_font_in_registry)
+
+
+def get_font_fallback(family_name: str, font_weight: int, is_italic: bool, characters: str) -> Optional[Path]:
+    """TODO
+    """
+    return get_system_fonts_class().get_font_fallback(family_name, font_weight, is_italic, characters)
