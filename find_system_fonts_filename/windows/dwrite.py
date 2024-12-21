@@ -347,4 +347,4 @@ class DWrite:
         # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-dwritecreatefactory
         self.DWriteCreateFactory = dwrite.DWriteCreateFactory
         self.DWriteCreateFactory.restype = HRESULT
-        self.DWriteCreateFactory.argtypes = [wintypes.UINT, GUID, POINTER(POINTER(IUnknown))]
+        self.DWriteCreateFactory.argtypes = [wintypes.UINT, POINTER(GUID), POINTER(POINTER(IUnknown))]

@@ -72,7 +72,7 @@ def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
     return fonts_filename
 
 
-def enum_fonts_2(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRICW, font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
+def enum_fonts_2(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
     enum_data: EnumData = py_object.from_address(lparam).value
 
     # It seems that font_type can be 0. In those case, the font format is .fon
@@ -81,10 +81,10 @@ def enum_fonts_2(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRICW, font_type: w
         # Replace the lfFaceName with the elfFullName.
         # See why here: https://github.com/libass/libass/issues/744
         lfFaceName = create_unicode_buffer(enum_data.gdi.LF_FACESIZE)
-        enum_data.msvcrt.wcsncpy_s(lfFaceName, enum_data.gdi.LF_FACESIZE, logfont.elfFullName, enum_data.msvcrt.TRUNCATE)
-        logfont.elfLogFont.lfFaceName = lfFaceName.value
+        enum_data.msvcrt.wcsncpy_s(lfFaceName, enum_data.gdi.LF_FACESIZE, logfont.contents.elfFullName, enum_data.msvcrt.TRUNCATE)
+        logfont.contents.elfLogFont.lfFaceName = lfFaceName.value
 
-        hfont = enum_data.gdi.CreateFontIndirectW(byref(logfont.elfLogFont))
+        hfont = enum_data.gdi.CreateFontIndirectW(byref(logfont.contents.elfLogFont))
         enum_data.gdi.SelectObject(enum_data.dc, hfont)
 
         font_face = POINTER(IDWriteFontFace)()
@@ -96,9 +96,9 @@ def enum_fonts_2(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRICW, font_type: w
     return True
 
 
-def enum_fonts_1(logfont: ENUMLOGFONTEXW, text_metric: TEXTMETRICW, font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
+def enum_fonts_1(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
     enum_data: EnumData = py_object.from_address(lparam).value
-    enum_data.gdi.EnumFontFamiliesW(enum_data.dc, logfont.elfLogFont.lfFaceName, enum_data.gdi.ENUMFONTFAMEXPROC(enum_fonts_2), lparam)
+    enum_data.gdi.EnumFontFamiliesW(enum_data.dc, logfont.contents.elfLogFont.lfFaceName, enum_data.gdi.ENUMFONTFAMEXPROC(enum_fonts_2), lparam)
 
     return True
 
@@ -132,7 +132,7 @@ class WindowsFonts(SystemFonts):
         fonts_filename = set()
 
         dwrite_factory = POINTER(IDWriteFactory)()
-        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, dwrite_factory._iid_, byref(dwrite_factory))
+        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, byref(dwrite_factory._iid_), byref(dwrite_factory))
 
         gdi_interop = POINTER(IDWriteGdiInterop)()
         dwrite_factory.GetGdiInterop(byref(gdi_interop))

@@ -96,8 +96,8 @@ class GDI32:
         # https://learn.microsoft.com/en-us/previous-versions/dd162618(v=vs.85)
         self.ENUMFONTFAMEXPROC = WINFUNCTYPE(
             wintypes.INT,
-            ENUMLOGFONTEXW,
-            TEXTMETRICW,
+            POINTER(ENUMLOGFONTEXW),
+            POINTER(TEXTMETRICW),
             wintypes.DWORD,
             wintypes.LPARAM,
         )
