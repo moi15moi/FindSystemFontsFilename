@@ -74,6 +74,8 @@ class UnixFonts(SystemFonts):
 
         font_config.FcStrListDone(font_dirs)
 
+        os.makedirs(dirs_decoded, exist_ok=True)
+
         copyfile(font_filename, os.path.join(dirs_decoded, font_filename.name))
         font_config.FcDirCacheRescan(dirs_encoded, config)
         font_config.FcConfigDestroy(config)
