@@ -54,5 +54,18 @@ jobs:
         pip install pytest
 
     - name: Run tests
+      if: runner.os != 'Linux'
       run: |
         pytest
+
+    - name: Install Valgrind
+      if: runner.os == 'Linux'
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+
+    - name: Run tests with Valgrind
+      if: runner.os == 'Linux'
+      run: |
+        wget https://raw.githubusercontent.com/python/cpython/main/Misc/valgrind-python.supp
+        valgrind --leak-check=full --show-leak-kinds=definite --errors-for-leak-kinds=definite --suppressions=valgrind-python.supp pytest
