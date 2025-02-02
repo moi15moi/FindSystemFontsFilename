@@ -46,10 +46,10 @@ class UnixFonts(SystemFonts):
                     # Decode with utf-8 since FcChar8
                     fonts_filename.add(file_path_ptr.value.decode())
 
-        font_config.FcConfigDestroy(config)
-        font_config.FcPatternDestroy(pat)
-        font_config.FcObjectSetDestroy(os)
-        font_config.FcFontSetDestroy(fs)
+        #font_config.FcFontSetDestroy(fs)
+        #font_config.FcObjectSetDestroy(os)
+        #font_config.FcPatternDestroy(pat)
+        #font_config.FcConfigDestroy(config)
 
         return fonts_filename
 
