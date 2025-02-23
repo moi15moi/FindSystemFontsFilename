@@ -16,6 +16,7 @@ class MacFonts(SystemFonts):
     # So, we also need to check the file extension to see if the file is valid.
     VALID_FONT_FORMATS = ["ttf", "otf", "ttc", "otc"]
 
+    @staticmethod
     def get_system_fonts_filename() -> Set[str]:
         if not MacVersionHelpers.is_mac_version_or_greater(10, 6):
             raise OSNotSupported("FindSystemFontsFilename only works on Mac 10.6 or more")
@@ -60,7 +61,8 @@ class MacFonts(SystemFonts):
         return fonts_filename
 
 
-    def install_font(font_filename: Path, windows_flags: bool) -> None:
+    @staticmethod
+    def install_font(font_filename: Path, add_font_to_registry: bool = False) -> None:
         if not MacVersionHelpers.is_mac_version_or_greater(10, 6):
             raise OSNotSupported("FindSystemFontsFilename only works on Mac 10.6 or more")
 
@@ -79,7 +81,8 @@ class MacFonts(SystemFonts):
             raise FindSystemFontsFilenameException(f"The font file \"{font_filename}\" could not be installed.")
 
 
-    def uninstall_font(font_filename: Path, windows_flags: bool) -> None:
+    @staticmethod
+    def uninstall_font(font_filename: Path, remove_font_in_registry: bool) -> None:
         if not MacVersionHelpers.is_mac_version_or_greater(10, 6):
             raise OSNotSupported("FindSystemFontsFilename only works on Mac 10.6 or more")
 

@@ -18,7 +18,7 @@ class MacVersionHelpers:
 
         system_major, system_minor = mac_ver()[0].split(".")[:2]
 
-        system_major = int(system_major)
-        system_minor = int(system_minor)
+        system_major_int = int(system_major)
+        system_minor_int = int(system_minor)
 
-        return system_major > minimum_major or (system_major == minimum_major and system_minor >= minimum_minor)
+        return system_major_int > minimum_major or (system_major_int == minimum_major and system_minor_int >= minimum_minor)

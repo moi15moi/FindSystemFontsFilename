@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import copyfile
 from ctypes import byref, c_char_p
 from typing import Set
-from ..exceptions import FindSystemFontsFilenameException, OSNotSupported
+from ..exceptions import FindSystemFontsFilenameException, OSNotSupported, SystemApiError
 from ..system_fonts import SystemFonts
 
 __all__ = ["UnixFonts"]
@@ -16,6 +16,7 @@ class UnixFonts(SystemFonts):
         FC_FONT_FORMAT.FT_FONT_FORMAT_CFF,
     ]
 
+    @staticmethod
     def get_system_fonts_filename() -> Set[str]:
         """
         Inspired by: https://stackoverflow.com/questions/10542832/how-to-use-fontconfig-to-get-font-list-c-c/14634033#14634033
@@ -43,6 +44,8 @@ class UnixFonts(SystemFonts):
                 font_format = FC_FONT_FORMAT(font_format_ptr.value)
 
                 if font_format in UnixFonts.VALID_FONT_FORMATS:
+                    if file_path_ptr.value is None:
+                        raise SystemApiError("An unexpected error has occurred while getting the font filename.")
                     # Decode with utf-8 since FcChar8
                     fonts_filename.add(file_path_ptr.value.decode())
 
@@ -54,7 +57,8 @@ class UnixFonts(SystemFonts):
         return fonts_filename
 
 
-    def install_font(font_filename: Path, windows_flags: bool) -> None:
+    @staticmethod
+    def install_font(font_filename: Path, add_font_to_registry: bool = False) -> None:
         font_config = FontConfig()
         version = font_config.FcGetVersion()
 
@@ -81,6 +85,7 @@ class UnixFonts(SystemFonts):
         font_config.FcConfigDestroy(config)
 
 
+    @staticmethod
     def uninstall_font(font_filename: Path, windows_flags: bool) -> None:
         font_config = FontConfig()
         version = font_config.FcGetVersion()

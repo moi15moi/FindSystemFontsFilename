@@ -42,3 +42,12 @@ version = { attr = "find_system_fonts_filename.__init__.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["find_system_fonts_filename*"]
+
+[tool.mypy]
+exclude = "build"
+files = ["."]
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["comtypes.*"]
+follow_untyped_imports = true

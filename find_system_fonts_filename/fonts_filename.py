@@ -2,7 +2,7 @@ import sys
 from os import name
 from pathlib import Path
 from platform import system
-from typing import Set
+from typing import Set, Type
 from .exceptions import OSNotSupported
 from .system_fonts import SystemFonts
 
@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 
-def get_system_fonts_class() -> SystemFonts:
+def get_system_fonts_class() -> Type[SystemFonts]:
     system_name = system()
 
     if system_name == "Windows":
