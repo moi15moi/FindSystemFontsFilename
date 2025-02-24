@@ -12,6 +12,7 @@ __all__ = ["AndroidFonts"]
 
 class AndroidFonts(SystemFonts):
 
+    @staticmethod
     def get_system_fonts_filename() -> Set[str]:
         android = Android()
         fonts_filename = set()
@@ -37,14 +38,17 @@ class AndroidFonts(SystemFonts):
         return fonts_filename
 
 
-    def install_font(font_filename: Path, windows_flags: bool) -> None:
+    @staticmethod
+    def install_font(font_filename: Path, add_font_to_registry: bool = False) -> None:
         raise OSNotSupported("You cannot install font on android.")
 
 
-    def uninstall_font(font_filename: Path, windows_flags: bool) -> None:
+    @staticmethod
+    def uninstall_font(font_filename: Path, remove_font_in_registry: bool) -> None:
         raise OSNotSupported("You cannot uninstall font on android.")
 
 
+    @staticmethod
     @contextmanager
     def _silence_stderr_and_stdout():
         # From: https://stackoverflow.com/a/75037627/15835974

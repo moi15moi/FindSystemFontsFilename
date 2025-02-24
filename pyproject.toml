@@ -33,6 +33,12 @@ dynamic = ["version"]
 Source = "https://github.com/moi15moi/FindSystemFontsFilename/"
 Tracker = "https://github.com/moi15moi/FindSystemFontsFilename/issues/"
 
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.0.0",
+  "pytest>=8.0.0",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -42,3 +48,28 @@ version = { attr = "find_system_fonts_filename.__init__.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["find_system_fonts_filename*"]
+
+[tool.mypy]
+exclude = "build"
+files = ["."]
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["comtypes.*"]
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.android.*"
+platform = "android"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.mac.*"
+platform = "darwin"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.unix.*"
+platform = "linux"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.windows.*"
+platform = "win32"

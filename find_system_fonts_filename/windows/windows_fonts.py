@@ -45,18 +45,18 @@ def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
     for font_file in font_files:
             font_file_reference_key = wintypes.LPCVOID()
             font_file_reference_key_size = wintypes.UINT()
-            font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size))
+            font_file.GetReferenceKey(byref(font_file_reference_key), byref(font_file_reference_key_size)) # type: ignore
 
             loader = POINTER(IDWriteFontFileLoader)()
-            font_file.GetLoader(byref(loader))
+            font_file.GetLoader(byref(loader)) # type: ignore
 
-            local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader)
+            local_loader = loader.QueryInterface(IDWriteLocalFontFileLoader) # type: ignore
 
             is_supported_font_type = wintypes.BOOLEAN()
             font_file_type = wintypes.UINT()
             font_face_type = wintypes.UINT()
             number_of_faces = wintypes.UINT()
-            font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
+            font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces)) # type: ignore
 
             if DWRITE_FONT_FILE_TYPE(font_file_type.value) not in WindowsFonts.VALID_FONT_FORMATS:
                 continue
@@ -72,12 +72,12 @@ def get_filepath_from_IDWriteFontFace(font_face) -> Set[str]:
     return fonts_filename
 
 
-def enum_fonts_2(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
-    enum_data: EnumData = py_object.from_address(lparam).value
+def enum_fonts_2(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM) -> wintypes.INT:
+    enum_data: EnumData = py_object.from_address(lparam).value # type: ignore
 
     # It seems that font_type can be 0. In those case, the font format is .fon
     # We also discard RASTER_FONTTYPE which are bitmap font
-    if not (font_type & enum_data.gdi.RASTER_FONTTYPE) and font_type:
+    if not (font_type.value & enum_data.gdi.RASTER_FONTTYPE) and font_type.value:
         # Replace the lfFaceName with the elfFullName.
         # See why here: https://github.com/libass/libass/issues/744
         lfFaceName = create_unicode_buffer(enum_data.gdi.LF_FACESIZE)
@@ -93,14 +93,14 @@ def enum_fonts_2(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETR
 
         enum_data.gdi.DeleteObject(hfont)
 
-    return True
+    return wintypes.INT(1)
 
 
-def enum_fonts_1(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM):
-    enum_data: EnumData = py_object.from_address(lparam).value
+def enum_fonts_1(logfont: POINTER(ENUMLOGFONTEXW), text_metric: POINTER(TEXTMETRICW), font_type: wintypes.DWORD, lparam: wintypes.LPARAM) -> wintypes.INT:
+    enum_data: EnumData = py_object.from_address(lparam).value # type: ignore
     enum_data.gdi.EnumFontFamiliesW(enum_data.dc, logfont.contents.elfLogFont.lfFaceName, enum_data.gdi.ENUMFONTFAMEXPROC(enum_fonts_2), lparam)
 
-    return True
+    return wintypes.INT(1)
 
 
 class EnumData:
@@ -120,6 +120,7 @@ class WindowsFonts(SystemFonts):
         DWRITE_FONT_FILE_TYPE.DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION,
     ]
 
+    @staticmethod
     def get_system_fonts_filename() -> Set[str]:
         windows_version = getwindowsversion()
 
@@ -129,13 +130,13 @@ class WindowsFonts(SystemFonts):
         dwrite = DWrite()
         gdi = GDI32()
         msvcrt = MSVCRT()
-        fonts_filename = set()
+        fonts_filename: Set[str] = set()
 
         dwrite_factory = POINTER(IDWriteFactory)()
-        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, byref(dwrite_factory._iid_), byref(dwrite_factory))
+        dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, byref(dwrite_factory._iid_), byref(dwrite_factory)) # type: ignore[attr-defined]
 
         gdi_interop = POINTER(IDWriteGdiInterop)()
-        dwrite_factory.GetGdiInterop(byref(gdi_interop))
+        dwrite_factory.GetGdiInterop(byref(gdi_interop)) # type: ignore
 
         dc = gdi.CreateCompatibleDC(None)
 
@@ -162,23 +163,23 @@ class WindowsFonts(SystemFonts):
         dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_ISOLATED, IDWriteFactory._iid_, byref(dwrite_factory))
 
         font_file = POINTER(IDWriteFontFile)()
-        dwrite_factory.CreateFontFileReference(font_filename_buffer, None, byref(font_file))
+        dwrite_factory.CreateFontFileReference(font_filename_buffer, None, byref(font_file)) # type: ignore
 
         is_supported_font_type = wintypes.BOOLEAN()
         font_file_type = wintypes.UINT()
         font_face_type = wintypes.UINT()
         number_of_faces = wintypes.UINT()
-        font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces))
+        font_file.Analyze(byref(is_supported_font_type), byref(font_file_type), byref(font_face_type), byref(number_of_faces)) # type: ignore
 
         if not is_supported_font_type:
             raise NotSupportedFontFile(f"The font file \"{font_filename}\" isn't supported on Windows.")
 
         font_collection_loader = CustomFontCollectionLoader([font_filename])
-        dwrite_factory.RegisterFontCollectionLoader(font_collection_loader)
+        dwrite_factory.RegisterFontCollectionLoader(font_collection_loader) # type: ignore
 
         custom_collection = POINTER(IDWriteFontCollection)()
         font_loader_key = create_unicode_buffer("find_system_fonts_filename_collection_loader")
-        dwrite_factory.CreateCustomFontCollection(font_collection_loader,
+        dwrite_factory.CreateCustomFontCollection(font_collection_loader, # type: ignore
                                                     cast(font_loader_key, wintypes.LPVOID),
                                                     sizeof(font_loader_key),
                                                     byref(custom_collection))
@@ -186,7 +187,7 @@ class WindowsFonts(SystemFonts):
         full_names: List[str] = []
         for i in range(number_of_faces.value):
             font_face = POINTER(IDWriteFontFace)()
-            dwrite_factory.CreateFontFace(font_face_type.value, 1, byref(font_file), i, DWRITE_FONT_SIMULATIONS.DWRITE_FONT_SIMULATIONS_NONE, byref(font_face))
+            dwrite_factory.CreateFontFace(font_face_type.value, 1, byref(font_file), i, DWRITE_FONT_SIMULATIONS.DWRITE_FONT_SIMULATIONS_NONE, byref(font_face)) # type: ignore
 
             """
             Converting a IDWriteFontFace to a IDWriteFont isn't easy.
@@ -195,11 +196,11 @@ class WindowsFonts(SystemFonts):
             the font may not be available. See issue #14
             """
             font = POINTER(IDWriteFont)()
-            custom_collection.GetFontFromFontFace(font_face, byref(font))
+            custom_collection.GetFontFromFontFace(font_face, byref(font)) # type: ignore
 
             full_name = POINTER(IDWriteLocalizedStrings)()
             exists = wintypes.BOOL()
-            font.GetInformationalStrings(
+            font.GetInformationalStrings( # type: ignore
                 DWRITE_INFORMATIONAL_STRING_ID.DWRITE_INFORMATIONAL_STRING_FULL_NAME,
                 byref(full_name),
                 byref(exists)
@@ -214,29 +215,30 @@ class WindowsFonts(SystemFonts):
 
             index = wintypes.UINT()
             exists = wintypes.BOOL()
-            full_name.FindLocaleName(locale_name, byref(index), byref(exists))
+            full_name.FindLocaleName(locale_name, byref(index), byref(exists)) # type: ignore
 
             if not exists.value:
-                full_name.FindLocaleName("en-us", byref(index), byref(exists))
+                full_name.FindLocaleName("en-us", byref(index), byref(exists)) # type: ignore
 
             if not exists.value:
-                index = 0
+                index = wintypes.UINT(0)
 
             length = wintypes.UINT()
-            full_name.GetStringLength(index, byref(length))
+            full_name.GetStringLength(index, byref(length)) # type: ignore
 
             family_names_buffer = create_unicode_buffer(length.value + 1)
-            full_name.GetString(index, family_names_buffer, len(family_names_buffer))
+            full_name.GetString(index, family_names_buffer, len(family_names_buffer)) # type: ignore
 
             full_names.append(family_names_buffer.value)
 
         registry_font_name = " & ".join(full_names) + " (FindSystemFontsFilename)"
-        dwrite_factory.UnregisterFontCollectionLoader(font_collection_loader)
+        dwrite_factory.UnregisterFontCollectionLoader(font_collection_loader) # type: ignore
 
         return registry_font_name
 
 
-    def install_font(font_filename: Path, add_font_to_registry: bool) -> None:
+    @staticmethod
+    def install_font(font_filename: Path, add_font_to_registry: bool = False) -> None:
         windows_version = getwindowsversion()
 
         if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
@@ -264,7 +266,8 @@ class WindowsFonts(SystemFonts):
         user32.SendNotifyMessageW(user32.HWND_BROADCAST, user32.WM_FONTCHANGE, 0, 0)
 
 
-    def uninstall_font(font_filename: Path, added_font_to_registry: bool) -> None:
+    @staticmethod
+    def uninstall_font(font_filename: Path, remove_font_in_registry: bool) -> None:
         windows_version = getwindowsversion()
 
         if not WindowsVersionHelpers.is_windows_vista_sp2_or_greater(windows_version):
@@ -277,7 +280,7 @@ class WindowsFonts(SystemFonts):
         gdi = GDI32()
         user32 = User32()
 
-        if added_font_to_registry and is_build_17083_or_greater:
+        if remove_font_in_registry and is_build_17083_or_greater:
             advapi32 = Advapi32()
             hkey = wintypes.HKEY()
             registry_font_name = WindowsFonts.get_registry_font_name(font_filename)
@@ -308,7 +311,7 @@ class CustomFontFileEnumerator(COMObject):
         self.dwrite_factory = dwrite_factory
         self.font_files_path = font_files_path
         self.current_index = -1
-        self.current_font_file = None
+        self.current_font_file: POINTER(IDWriteFontFile) = None
 
     def IDWriteFontFileEnumerator_MoveNext(self, this, has_current_file: POINTER(wintypes.BOOL)) -> int:
         self.current_index += 1

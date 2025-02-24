@@ -47,12 +47,12 @@ jobs:
         architecture: ${{ matrix.architecture }}
 
     - name: Install Python requirements
-      run: pip install --upgrade --upgrade-strategy eager .
-
-    - name: Install pytest
-      run: |
-        pip install pytest
+      run: pip install --upgrade --upgrade-strategy eager .[dev]
 
     - name: Run tests
       run: |
         pytest
+
+    - name: Typecheck with mypy
+      run: |
+        mypy
