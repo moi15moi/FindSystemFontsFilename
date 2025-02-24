@@ -57,3 +57,19 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = ["comtypes.*"]
 follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.android.*"
+platform = "android"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.mac.*"
+platform = "darwin"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.unix.*"
+platform = "linux"
+
+[[tool.mypy.overrides]]
+module = "find_system_fonts_filename.windows.*"
+platform = "win32"
