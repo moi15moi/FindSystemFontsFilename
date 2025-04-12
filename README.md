@@ -2,6 +2,7 @@
 [![FindSystemFontsFilename - CI Build Status](https://github.com/moi15moi/FindSystemFontsFilename/workflows/Run%20Tests/badge.svg)](https://github.com/moi15moi/FindSystemFontsFilename/actions/workflows/run_test.yml)
 [![FindSystemFontsFilename - Version](https://img.shields.io/pypi/v/findsystemfontsfilename.svg)](https://pypi.org/project/FindSystemFontsFilename)
 [![FindSystemFontsFilename - Python Version](https://img.shields.io/pypi/pyversions/findsystemfontsfilename.svg)](https://pypi.org/project/FindSystemFontsFilename)
+[![FindSystemFontsFilename - Coverage](https://img.shields.io/codecov/c/github/moi15moi/FindSystemFontsFilename)](https://app.codecov.io/github/moi15moi/FindSystemFontsFilename)
 
 This tool allows you to get the font filename on your system. It will collect TrueType (.ttf), OpenType (.otf), TrueType Collection (.ttc) and OpenType Collection (.otc) font format.
 
