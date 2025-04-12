@@ -47,12 +47,18 @@ jobs:
         architecture: ${{ matrix.architecture }}
 
     - name: Install Python requirements
-      run: pip install --upgrade --upgrade-strategy eager .
-
-    - name: Install pytest
-      run: |
-        pip install pytest
+      run: pip install --upgrade --upgrade-strategy eager .[dev]
 
     - name: Run tests
+      run: pytest
+
+    - name: Generate coverage report
       run: |
-        pytest
+        coverage run -m pytest
+        coverage xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}

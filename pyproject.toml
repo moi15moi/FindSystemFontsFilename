@@ -33,6 +33,12 @@ dynamic = ["version"]
 Source = "https://github.com/moi15moi/FindSystemFontsFilename/"
 Tracker = "https://github.com/moi15moi/FindSystemFontsFilename/issues/"
 
+[project.optional-dependencies]
+dev = [
+    "coverage>=7.0.0",
+    "pytest>=8.0.0",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
