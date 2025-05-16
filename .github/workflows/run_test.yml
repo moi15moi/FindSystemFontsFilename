@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest, windows-11-arm]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
         architecture: [x64, x86, arm64]
         exclude:
           - os: ubuntu-latest
@@ -60,7 +60,9 @@ jobs:
         architecture: ${{ matrix.architecture }}
 
     - name: Install Python requirements
-      run: pip install --upgrade --upgrade-strategy eager .[dev]
+      run: |
+        pip install git+https://github.com/junkmd/comtypes.git@cpython-gh-100926
+        pip install --upgrade --upgrade-strategy eager .[dev]
 
     - name: Run tests
       run: pytest
