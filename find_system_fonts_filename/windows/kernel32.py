@@ -1,4 +1,4 @@
-from ctypes import windll, wintypes
+from ctypes import WinDLL, wintypes
 from ..exceptions import SystemApiError
 
 __all__ = ["Kernel32"]
@@ -6,7 +6,7 @@ __all__ = ["Kernel32"]
 
 class Kernel32():
     def __init__(self) -> None:
-        kernel32 = windll.LoadLibrary("kernel32")
+        kernel32 = WinDLL("kernel32")
 
         self.LOCALE_NAME_MAX_LENGTH = 85
 

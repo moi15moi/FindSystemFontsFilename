@@ -1,5 +1,5 @@
 from .types import CFIndex, CFNumberRef, CFStringEncoding
-from ctypes import c_bool, c_char_p, c_void_p, cdll, util
+from ctypes import c_bool, c_char_p, c_void_p, CDLL, util
 from enum import IntEnum
 
 __all__ = [
@@ -63,7 +63,7 @@ class CoreFoundation():
         # From: https://github.com/pyglet/pyglet/blob/a44e83a265e7df8ece793de865bcf3690f66adbd/pyglet/libs/darwin/cocoapy/cocoalibs.py#L10-L14
         if core_foundation_library_name is None:
             core_foundation_library_name = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation"
-        core_foundation = cdll.LoadLibrary(core_foundation_library_name)
+        core_foundation = CDLL(core_foundation_library_name)
 
 
         # https://developer.apple.com/documentation/corefoundation/1521153-cfrelease

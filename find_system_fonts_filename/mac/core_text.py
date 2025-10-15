@@ -1,5 +1,5 @@
 from .types import CFIndex
-from ctypes import c_bool, c_uint32, c_void_p, cdll, util
+from ctypes import c_bool, c_uint32, c_void_p, CDLL, util
 from enum import IntEnum
 
 __all__ = [
@@ -35,7 +35,7 @@ class CoreText():
         # From: https://github.com/pyglet/pyglet/blob/a44e83a265e7df8ece793de865bcf3690f66adbd/pyglet/libs/darwin/cocoapy/cocoalibs.py#L520-L524
         if core_text_library_name is None:
             core_text_library_name = "/System/Library/Frameworks/CoreText.framework/CoreText"
-        core_text = cdll.LoadLibrary(core_text_library_name)
+        core_text = CDLL(core_text_library_name)
 
         self.kCTFontURLAttribute = c_void_p.in_dll(core_text, "kCTFontURLAttribute")
         self.kCTFontFormatAttribute = c_void_p.in_dll(core_text, "kCTFontFormatAttribute")

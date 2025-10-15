@@ -1,4 +1,4 @@
-from ctypes import c_char_p, c_void_p, cdll, util
+from ctypes import c_char_p, c_void_p, CDLL, util
 from ..exceptions import AndroidLibraryNotFound, OSNotSupported
 
 __all__ = ["Android"]
@@ -12,7 +12,7 @@ class Android():
         if android_library_name is None:
             raise AndroidLibraryNotFound("You need to have the libandroid library. It is only available since the SDK/API level 29.")
 
-        android = cdll.LoadLibrary(android_library_name)
+        android = CDLL(android_library_name)
 
         try:
             # https://developer.android.com/ndk/reference/group/font#asystemfontiterator_open

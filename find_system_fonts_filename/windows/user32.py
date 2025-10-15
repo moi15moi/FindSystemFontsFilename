@@ -1,4 +1,4 @@
-from ctypes import windll, wintypes
+from ctypes import WinDLL, wintypes
 from ..exceptions import SystemApiError
 
 __all__ = ["User32"]
@@ -6,7 +6,7 @@ __all__ = ["User32"]
 
 class User32():
     def __init__(self) -> None:
-        user32 = windll.LoadLibrary("user32")
+        user32 = WinDLL("user32")
 
         self.HWND_BROADCAST = wintypes.HWND(0xFFFF)
         self.WM_FONTCHANGE = wintypes.UINT(0x001D)
