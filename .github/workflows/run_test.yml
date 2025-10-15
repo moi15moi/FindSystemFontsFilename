@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest, windows-11-arm]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         architecture: [x64, x86, arm64]
         exclude:
           - os: ubuntu-latest
@@ -39,9 +39,6 @@ jobs:
             architecture: x64
           - os: windows-11-arm
             architecture: x86
-          - os: windows-11-arm
-            architecture: arm64
-            python-version: "3.8"
           - os: windows-11-arm
             architecture: arm64
             python-version: "3.9"
