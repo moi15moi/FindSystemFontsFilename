@@ -1,4 +1,4 @@
-from ctypes import c_char_p, c_int, c_void_p, cdll, POINTER, Structure, util
+from ctypes import c_char_p, c_int, c_void_p, CDLL, POINTER, Structure, util
 from enum import Enum, IntEnum
 from ..exceptions import FontConfigNotFound
 
@@ -50,7 +50,7 @@ class FontConfig():
         if font_config_library_name is None:
             raise FontConfigNotFound("You need to install FontConfig to get the fonts filename")
 
-        font_config = cdll.LoadLibrary(font_config_library_name)
+        font_config = CDLL(font_config_library_name)
 
         self.FC_FONTFORMAT = FontConfig.string_to_cstring("fontformat")
         self.FC_FILE = FontConfig.string_to_cstring("file")

@@ -1,4 +1,4 @@
-from ctypes import POINTER, WINFUNCTYPE, c_ubyte, Structure, windll, wintypes
+from ctypes import POINTER, WINFUNCTYPE, c_ubyte, Structure, WinDLL, wintypes
 from ..exceptions import SystemApiError
 
 __all__ = ["GDI32"]
@@ -62,7 +62,7 @@ class ENUMLOGFONTEXW(Structure):
 
 class GDI32:
     def __init__(self) -> None:
-        gdi = windll.LoadLibrary("gdi32")
+        gdi = WinDLL("gdi32")
 
         self.LF_FACESIZE = 32
         self.RASTER_FONTTYPE = 0x0001

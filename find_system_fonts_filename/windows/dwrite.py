@@ -1,6 +1,6 @@
 from .gdi32 import LOGFONTW
 from comtypes import GUID, HRESULT, IID, IUnknown, STDMETHOD
-from ctypes import POINTER, windll, wintypes
+from ctypes import POINTER, WinDLL, wintypes
 from enum import IntEnum, IntFlag
 
 __all__ = [
@@ -342,7 +342,7 @@ class IDWriteFactory3(IDWriteFactory2):
 
 class DWrite:
     def __init__(self) -> None:
-        dwrite = windll.LoadLibrary("dwrite")
+        dwrite = WinDLL("dwrite")
 
         # https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-dwritecreatefactory
         self.DWriteCreateFactory = dwrite.DWriteCreateFactory

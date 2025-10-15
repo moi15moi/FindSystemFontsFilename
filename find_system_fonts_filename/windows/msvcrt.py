@@ -1,4 +1,4 @@
-from ctypes import c_size_t, windll, wintypes
+from ctypes import c_size_t, WinDLL, wintypes
 from ..exceptions import SystemApiError
 
 __all__ = ["MSVCRT"]
@@ -6,7 +6,7 @@ __all__ = ["MSVCRT"]
 
 class MSVCRT:
     def __init__(self) -> None:
-        msvcrt = windll.LoadLibrary("msvcrt")
+        msvcrt = WinDLL("msvcrt")
 
         # https://learn.microsoft.com/fr-fr/cpp/c-runtime-library/reference/strncpy-s-strncpy-s-l-wcsncpy-s-wcsncpy-s-l-mbsncpy-s-mbsncpy-s-l?view=msvc-170
         self.wcsncpy_s = msvcrt.wcsncpy_s
